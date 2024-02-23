@@ -7,7 +7,7 @@
 
 ## Description
 
-Open Source, feature-rich, gui-integrated Geometry Dash mod menu. Currently supports Geometry Dash 2.204.
+Free, open source, feature-rich Geometry Dash menu, based on GDMegaOverlay . Currently supports Geometry Dash 2.204.
 
 ![Menu screen](/img/screen.jpg)
 
