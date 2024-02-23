@@ -1,6 +1,6 @@
 <div align="center">
 
-# GD Mega Overlay
+# GD Mega Overlay (Please Maxnu don't see this)
 [![Discord](https://img.shields.io/discord/1035900688737255425?label=discord&logo=discord)](https://discord.gg/nbDjEg7SSU)
 ![Downloads](https://img.shields.io/github/downloads/maxnut/GDMegaOverlay/total)
 </div>
