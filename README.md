@@ -9,6 +9,10 @@
 
 Free, open source, feature-rich Geometry Dash menu, based on GDMegaOverlay . Currently supports Geometry Dash 2.204.
 
+## Project is currently unmaintained 
+
+I don't know how to compile this into a geode mod yet
+
 ![Menu screen](/img/screen.jpg)
 
 ## Standard Installation
