@@ -1,10 +1,8 @@
 <div align="center">
 
 # GD Mod Hack (Please Maxnu don't see this)
-[![Discord](https://img.shields.io/discord/1035900688737255425?label=discord&logo=discord)](https://discord.gg/nbDjEg7SSU)
-![Downloads](https://img.shields.io/github/downloads/maxnut/GDMegaOverlay/total)
-</div>
 
+<div align="left">
 ## Description
 
 Free, open source, feature-rich Geometry Dash menu, based on GDMegaOverlay . Currently supports Geometry Dash 2.204.
