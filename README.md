@@ -21,7 +21,7 @@ I don't know how to compile this into a geode mod yet
 > Only download the source code for development purposes.[^1] See above to install the modification/overlay to your installation of Geometry Dash, or below to install manually.
 ---
 > **Note:** <br>
-> This Project only supports **Windows** and **Linux**.
+> This Project only supports **Windows** and **Linux** (Through WINE).
 ---
 [**Install Geode. This is required for the mod menu to work!**](https://geode-sdk.org/install/)
 
