@@ -49,4 +49,4 @@ You can use the overlay by pressing **Tab**.
 
 [mat](https://github.com/matcool) for internal recorder
 
-[^1]: You can download source code using ``git clone https://github.com/maxnut/GDMegaOverlay.git``, or on [github.com/maxnut/GDMegaOverlay](https://github.com/maxnut/GDMegaOverlay) (the page you are likely on) you can press "Code" and then press "Download Zip", unzip the zip file and modify to your liking. Recommended you create a fork and save your changes there.
+You can download source code using ``git clone https://github.com/maxnut/GDMegaOverlay.git``, or on [github.com/maxnut/GDMegaOverlay](https://github.com/maxnut/GDMegaOverlay) (the page you are likely on) you can press "Code" and then press "Download Zip", unzip the zip file and modify to your liking. Recommended you create a fork and save your changes there.
