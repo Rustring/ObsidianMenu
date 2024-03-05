@@ -17,7 +17,7 @@ This is **NOT** meant to rival GD Mega Overlay. it is just a **FUN** project for
 ## Installation
 
 > **Warning** <br>
-> Only download the source code for development purposes.[^1] See above to install the modification/overlay to your installation of Geometry Dash, or below to install manually.
+> Only download the source code for development purposes.[^1] See below to install the modification/overlay to your installation of Geometry Dash.
 ---
 > **Note:** <br>
 > This Project only supports **Windows** and **Linux** (Through WINE).
