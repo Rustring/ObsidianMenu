@@ -14,8 +14,8 @@ body:
   - type: dropdown
     id: platform
     attributes:
-      label: Platform
-      description: The platform you were using when this bug was encountered.
+      label: Operating System
+      description: The OS you were using when this bug was encountered.
       options:
         - "Windows"
         - "Linux"
