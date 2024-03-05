@@ -13,19 +13,19 @@ body:
   - type: textarea
     id: problem
     attributes:
-      label: Related Problem
+      label: Requested Feature 
       description: If the feature you wish to change is related to a problem, please describe it. Leave this field blank if it is not related to a problem.
-      placeholder: "Example: I'm always frustrated when..."
+      placeholder: "Example: I'm want you to add..."
     validations:
       required: false
   - type: textarea
     id: solution
     attributes:
-      label: Your Solution
+      label: How Will It Work?
       description: Describe the solution you would like to have happen.
-      placeholder: "Example: If I could..."
+      placeholder: "Example: It works like..."
     validations:
-      required: true
+      required: false
   - type: textarea
     id: additional-info
     attributes:
