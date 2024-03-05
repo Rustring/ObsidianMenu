@@ -381,8 +381,8 @@ void GUI::setStyle()
 	if (Settings::get<bool>("menu/window/rainbow/enabled"))
 	{
 		ImGui::ColorConvertHSVtoRGB(
-			ImGui::GetTime() * Settings::get<float>("menu/window/rainbow/speed", .4f),
-			Settings::get<float>("menu/window/rainbow/brightness", .8f),
+			ImGui::GetTime() * Settings::get<float>("menu/window/rainbow/speed", .2f),
+			Settings::get<float>("menu/window/rainbow/brightness", .6f),
 			Settings::get<float>("menu/window/rainbow/brightness"),
 			r, g, b
 		);
