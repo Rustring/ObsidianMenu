@@ -6,7 +6,7 @@
 
 ## Description
 
-Free, open source, feature-rich Geometry Dash menu, based on GDMegaOverlay. Currently supports Geometry Dash 2.204.
+My own version of GDMegaOverlay. Currently supports Geometry Dash 2.204.
 
 ![Menu screen](/img/screen.png)
 
