@@ -7,7 +7,7 @@ body:
     attributes:
       label: Version
       description: The version of GD Mod Hack you are using for suggesting a feature on.
-      placeholder: "Example: v0.5.4"
+      placeholder: "Example: v1.5.4"
     validations:
       required: false
   - type: textarea
