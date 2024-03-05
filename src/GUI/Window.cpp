@@ -43,7 +43,7 @@ void Window::draw()
 
 		bool blurEnabled = Settings::get<bool>("menu/blur/enabled", false);
 		bool blurGD = Settings::get<bool>("menu/blur/gd", false);
-		float windowTransparency = Settings::get<float>("menu/window/opacity", 0.98f);
+		float windowTransparency = Settings::get<float>("menu/window/opacity", 0.85f);
 		float blurDarkness = Settings::get<float>("menu/blur/darkness", 1.f);
 
 		if(blurEnabled)
