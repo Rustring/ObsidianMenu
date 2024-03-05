@@ -2,10 +2,6 @@ name: Ask a Question
 description: Ask a question regarding this project.
 labels: [ "question" ]
 body:
-  - type: markdown
-    attributes:
-      value: |
-        If you are in need of quick response, Discord may be a better place. We are quite active on Discord, so you may get responses quicker. 
   - type: textarea
     id: question
     attributes:
