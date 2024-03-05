@@ -9,7 +9,7 @@ body:
         Report a bug where something is not working as expected, which does not crash the game.
         Failing to do this will get your issue *closed without explanation*.    
       options:
-        - label: I confirm that this bug is NOT related to a mod but directly to Geode Loader itself.
+        - label: I confirm that this bug is NOT an issue with the GD Mega Overlay code.
           required: true
   - type: dropdown
     id: platform
