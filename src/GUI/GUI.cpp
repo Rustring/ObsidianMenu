@@ -374,7 +374,7 @@ void GUI::setStyle()
 {
 	ImGuiStyle& style = ImGui::GetStyle();
 
-	float r = Settings::get<float>("menu/window/color/r", 1.f);
+	float r = Settings::get<float>("menu/window/color/r", 0.f);
 	float g = Settings::get<float>("menu/window/color/g", 0.f);
 	float b = Settings::get<float>("menu/window/color/b", 0.f);
 
