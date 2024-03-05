@@ -9,18 +9,17 @@ body:
         When submitting a crash report, please make sure it's a crash report.
         Failing to do this will get your issue *closed without explanation*.
       options:
-        - label: I confirm that this crash is NOT related to a mod but directly to Geode Loader itself.
+        - label: I confirm that this bug is NOT an issue with the GD Mega Overlay code.
           required: true
   - type: dropdown
     id: platform
     attributes:
-      label: Platform
-      description: The platform you were using when this bug was encountered.
+      label: Operating System
+      description: The OS you were using when this bug was encountered.
       options:
-        - "MacOS"
         - "Windows"
-        - "Android64"
-        - "Android32"
+        - "Linux"
+        - "Other (Windows Vsersion of GD)"
     validations:
       required: true
   - type: input
