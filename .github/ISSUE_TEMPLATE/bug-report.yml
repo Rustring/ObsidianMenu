@@ -8,7 +8,7 @@ body:
       description: |
         Report a bug where something is not working as expected, which does not crash the game.
         Failing to do this will get your issue *closed without explanation*.    
-              options:
+      options:
         - label: I confirm that this bug is NOT related to a mod but directly to Geode Loader itself.
           required: true
   - type: dropdown
