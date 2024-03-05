@@ -15,7 +15,7 @@ body:
     attributes:
       label: Requested Feature 
       description: The feature you want to request.
-      placeholder: "Example: I'm want you to add..."
+      placeholder: "Example: I'm want you to add X..."
     validations:
       required: true
   - type: textarea
@@ -31,7 +31,7 @@ body:
     attributes:
       label: Additional Information
       description: Any additional information you wish to provide. Please add anything which did not fit into the other sections here.
-      placeholder: "Example: This is likely achievable by doing X because..."
+      placeholder: "Example: This is likely achievable by doing Z because..."
     validations:
       required: false
   - type: markdown
