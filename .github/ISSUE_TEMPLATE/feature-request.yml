@@ -9,20 +9,20 @@ body:
       description: The version of GD Mod Hack you are using for suggesting a feature on.
       placeholder: "Example: v0.5.4"
     validations:
-      required: true
+      required: false
   - type: textarea
     id: problem
     attributes:
       label: Requested Feature 
-      description: If the feature you wish to change is related to a problem, please describe it. Leave this field blank if it is not related to a problem.
+      description: The feature you want to request.
       placeholder: "Example: I'm want you to add..."
     validations:
-      required: false
+      required: true
   - type: textarea
     id: solution
     attributes:
       label: How Will It Work?
-      description: Describe the solution you would like to have happen.
+      description: Describe how will it work with examples.
       placeholder: "Example: It works like..."
     validations:
       required: false
