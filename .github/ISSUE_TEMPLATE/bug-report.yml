@@ -8,6 +8,7 @@ body:
       description: |
         Report a bug where something is not working as expected, which does not crash the game.
         Failing to do this will get your issue *closed without explanation*.
+        
   - type: dropdown
     id: platform
     attributes:
