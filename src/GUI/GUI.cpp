@@ -15,8 +15,9 @@
 #include "Common.h"
 #include "Hacks/SafeMode.h"
 
-using namespace geode::prelude;
+#include "Blur.h"
 
+using namespace geode::prelude;
 
 class $modify(CCKeyboardDispatcher)
 {
@@ -86,7 +87,12 @@ ImVec2 GUI::getJsonPosition(const std::string& name)
 		windowPositions[name]["y"] = .0f;
 	}
 
-	return {windowPositions[name]["x"].get<float>(), windowPositions[name]["y"].get<float>()};
+	auto winSize = CCDirector::sharedDirector()->getOpenGLView()->getViewPortRect();
+
+	if(windowPositions[name]["x"] > 1 || windowPositions[name]["y"] > 1)
+		winSize.size = cocos2d::CCSize(1.f, 1.f);
+
+	return {windowPositions[name]["x"].get<float>() * winSize.size.width, windowPositions[name]["y"].get<float>() * winSize.size.height};
 }
 
 void GUI::setJsonPosition(const std::string& name, ImVec2 pos)
@@ -139,9 +145,6 @@ void GUI::draw()
 	for (Window& w : windows)
 		w.draw();
 
-	windowPositions["res"]["x"] = ImGui::GetIO().DisplaySize.x;
-	windowPositions["res"]["y"] = ImGui::GetIO().DisplaySize.y;
-
 	float transitionDuration = Settings::get<float>("menu/transition_duration", 0.35f);
 
 	hideTimer += ImGui::GetIO().DeltaTime;
@@ -156,15 +159,15 @@ void GUI::toggle()
 
 	Common::updateCheating();
 	SafeMode::updateAuto();
+	Blur::compileBlurShader();
 
 	isVisible = true;
-	static bool toggle = false;
-	toggle = !toggle;
+	toggled = !toggled;
 
 	// 🔥🔥🔥🔥
-	hideTimer = toggle ? -FLT_MAX : 0;
+	hideTimer = toggled ? -FLT_MAX : 0;
 
-	if (!toggle)
+	if (!toggled)
 		save();
 
 	for (WindowAction* ac : windowActions)
@@ -176,16 +179,6 @@ void GUI::toggle()
 
 	for (Window& w : windows)
 	{
-		ImVec2 screenSize = ImGui::GetIO().DisplaySize;
-		ImVec2 jsonScreenSize = {windowPositions["res"]["x"], windowPositions["res"]["y"]};
-
-		if (screenSize.x != jsonScreenSize.x || screenSize.y != jsonScreenSize.y)
-		{
-			ImVec2 scaleFactor = {screenSize.x / jsonScreenSize.x, screenSize.y / jsonScreenSize.y};
-			if (scaleFactor.x >= 0.5f)
-				w.position = {w.position.x * scaleFactor.x, w.position.y * scaleFactor.y};
-		}
-
 		uint8_t animationType = (w.name.length() + direction) % 4;
 
 		ImVec2 dir;
@@ -209,7 +202,7 @@ void GUI::toggle()
 		float transitionDuration = Settings::get<float>("menu/transition_duration", 0.35f);
 
 		WindowAction* action = WindowAction::create(
-			transitionDuration, &w, toggle ? w.position : ImVec2(w.position.x + dir.x, w.position.y + dir.y));
+			transitionDuration, &w, toggled ? w.position : ImVec2(w.position.x + dir.x, w.position.y + dir.y));
 		windowActions.push_back(action);
 	}
 }
@@ -249,12 +242,9 @@ void GUI::save()
 {
 	for (Window& w : windows)
 	{
-		windowPositions[w.name]["x"] = w.position.x;
-		windowPositions[w.name]["y"] = w.position.y;
+		windowPositions[w.name]["x"] = (float)w.position.x / (float)ImGui::GetIO().DisplaySize.x;
+		windowPositions[w.name]["y"] = (float)w.position.y / (float)ImGui::GetIO().DisplaySize.y;
 	}
-
-	windowPositions["res"]["x"] = ImGui::GetIO().DisplaySize.x;
-	windowPositions["res"]["y"] = ImGui::GetIO().DisplaySize.y;
 
 	std::ofstream f(Mod::get()->getSaveDir() / "windows.json");
 	f << windowPositions.dump(4);
@@ -307,12 +297,6 @@ void GUI::load()
 	}
 	f.close();
 
-	if (!windowPositions.contains("res"))
-	{
-		windowPositions["res"]["x"] = ImGui::GetIO().DisplaySize.x;
-		windowPositions["res"]["y"] = ImGui::GetIO().DisplaySize.x;
-	}
-
 	f.open(Mod::get()->getSaveDir() / "shortcuts.json");
 	if (f)
 	{
@@ -337,6 +321,35 @@ void GUI::load()
 		}
 	}
 	f.close();
+}
+
+void GUI::resetDefault()
+{
+	std::ifstream f(Mod::get()->getResourcesDir() / "default_windows.json");
+
+	if (f)
+	{
+		std::stringstream buffer;
+		buffer << f.rdbuf();
+		try
+		{
+			windowPositions = json::parse(buffer.str());
+		}
+		catch(json::parse_error& ex)
+		{
+			log::error("{}", ex.what());
+			windowPositions = json::object();
+		}
+		buffer.clear();
+	}
+	f.close();
+
+	for(Window& window : windows)
+	{
+		window.position = getJsonPosition(window.name);
+		window.renderPosition = window.position;
+		window.size = getJsonSize(window.name, window.size);
+	}
 }
 
 void GUI::saveStyle(const ghc::filesystem::path& name)

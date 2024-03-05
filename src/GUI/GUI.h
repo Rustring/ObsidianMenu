@@ -3,6 +3,7 @@
 #include "Window.h"
 #include "Widgets.h"
 #include "Shortcut.h"
+#include "RenderTexture.h"
 
 #include <nlohmann/json.hpp>
 #include <vector>
@@ -22,6 +23,7 @@ namespace GUI
 
 	inline bool isVisible = false;
 	inline bool shortcutLoop = false;
+	inline bool toggled = false;
 
 	inline bool hasLateInit = false;
 
@@ -30,9 +32,6 @@ namespace GUI
 	inline float hideTimer = 0.0f;
 
 	inline std::function<void()> lateInit;
-
-	inline bool(__thiscall* menuLayerInit)(int* self);
-	bool __fastcall menuLayerInitHook(int* self, void*);
 
 	ImVec2 getJsonPosition(const std::string&);
 	void setJsonPosition(const std::string&, ImVec2);
@@ -51,6 +50,8 @@ namespace GUI
 
 	void save();
 	void load();
+
+	void resetDefault();
 
 	void saveStyle(const ghc::filesystem::path& name);
 	void loadStyle(const ghc::filesystem::path& name);

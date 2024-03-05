@@ -309,6 +309,29 @@ bool GUI::inputInt2(const std::string& name, int* value, int min1, int max1, int
 	return result;
 }
 
+bool GUI::inputFloat2(const std::string& name, float* value, float min1, float max1, float min2, float max2)
+{
+	bool result = false;
+	if (GUI::shouldRender())
+	{
+		ImGui::PushItemWidth(90);
+		result = ImGui::InputFloat2(name.c_str(), value, 0);
+		ImGui::PopItemWidth();
+	}
+
+	if (value[0] < min1)
+		value[0] = min1;
+	if (value[0] > max1)
+		value[0] = max1;
+
+	if (value[1] < min2)
+		value[1] = min2;
+	if (value[1] > max2)
+		value[1] = max2;
+
+	return result;
+}
+
 bool GUI::inputFloat(const std::string& name, float* value, float min, float max)
 {
 	bool result = false;
@@ -323,6 +346,32 @@ bool GUI::inputFloat(const std::string& name, float* value, float min, float max
 		*value = min;
 	if (*value > max)
 		*value = max;
+
+	return result;
+}
+
+bool GUI::inputInt(const std::string& name, const std::string& setting, int defaultValue, int min, int max)
+{
+	int value = Settings::get<int>(setting, defaultValue);
+	bool result = false;
+	if (GUI::inputInt(name, &value, min, max))
+	{
+		Mod::get()->setSavedValue<int>(setting, value);
+		result = true;
+	}
+
+	return result;
+}	
+
+bool GUI::inputFloat(const std::string& name, const std::string& setting, float defaultValue, float min, float max)
+{
+	float value = Settings::get<float>(setting, defaultValue);
+	bool result = false;
+	if (GUI::inputFloat(name, &value, min, max))
+	{
+		Mod::get()->setSavedValue<float>(setting, value);
+		result = true;
+	}
 
 	return result;
 }

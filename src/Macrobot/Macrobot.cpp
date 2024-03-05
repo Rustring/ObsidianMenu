@@ -110,14 +110,17 @@ class $modify(PlayLayer)
 					this->m_player1->pushButton(PlayerButton::Left);
 			}
 
-			//TODO only do this when necessary
-			bool isDual = MBO(bool, this, 878);
+			if(playerMode == RECORDING)
+			{
+				//TODO only do this when necessary
+				bool isDual = MBO(bool, this, 878);
 
-			gameTime += (1.0 / (double)Common::getTPS()) + 0.00000001;
-			Macrobot::recordAction(PlayerButton::Jump, gameTime, false, true);
-			if(isDual)
-				Macrobot::recordAction(PlayerButton::Jump, gameTime, false, false);
-			gameTime -= (1.0 / (double)Common::getTPS()) + 0.00000001;
+				gameTime += (1.0 / (double)Common::getTPS()) + 0.00000001;
+				Macrobot::recordAction(PlayerButton::Jump, gameTime, false, true);
+				if(isDual)
+					Macrobot::recordAction(PlayerButton::Jump, gameTime, false, false);
+				gameTime -= (1.0 / (double)Common::getTPS()) + 0.00000001;
+			}
 		}
 		else
 			PlayLayer::resetLevel();
@@ -174,13 +177,14 @@ Macrobot::Action* Macrobot::recordAction(PlayerButton key, double frame, bool pr
 	ac.frame = macro.frameForTime(frame);
 
 	PlayLayer* pl = GameManager::get()->getPlayLayer();
+	PlayerObject* player = player1 ? pl->m_player1 : pl->m_player2;
 
-	if (Settings::get<int>("macrobot/corrections") > 0)
+	if (Settings::get<int>("macrobot/corrections") > 0 && (player->m_position.x != 0 && player->m_position.y != 0))
 	{
 		Correction c;
 		c.time = gameTime;
 		c.player2 = !player1;
-		c.checkpoint.fromPlayer(player1 ? pl->m_player1 : pl->m_player2, false);
+		c.checkpoint.fromPlayer(player, false);
 		ac.correction = c;
 	}
 
@@ -276,7 +280,7 @@ void Macrobot::GJBaseGameLayerProcessCommands(GJBaseGameLayer* self)
 
 		if(macro.inputs.size() > 0 && macro.inputs[actionIndex].time >= 0)
 			macro.inputs[actionIndex].frame = macro.frameForTime(macro.inputs[actionIndex].time);
-
+			
 		//log::debug("PROCESSCOMMANDS {} {} {}", MBO(double, GameManager::get()->getPlayLayer()->m_player1, 1936), GameManager::get()->getPlayLayer()->m_player1->m_position.x, gameFrame);
 
 		if (playerMode == PLAYBACK && macro.inputs.size() > 0 && actionIndex < macro.inputs.size() &&

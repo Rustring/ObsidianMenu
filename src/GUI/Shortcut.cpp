@@ -70,30 +70,42 @@ void GUI::Shortcut::renderWindow()
 		{
 			ImGui::Text("Shift + Left Click an option\nto make a shortcut");
 			ImGui::Spacing();
-			return;
 		}
-
-		int uid = 0;
-		for (GUI::Shortcut& s : GUI::shortcuts)
+		else
 		{
-			ImGui::AlignTextToFramePadding();
-			int displayKeyIndex = s.key - 511;
-			if (displayKeyIndex < 0)
-				displayKeyIndex = 0;
-			ImGui::Text(KeyNames[displayKeyIndex]);
-			GUI::sameLine();
-			ImGui::Text(s.name.c_str());
-			GUI::sameLine(ImGui::GetWindowSize().x - 30);
-			if (GUI::button(std::format("x##{}", std::to_string(uid))))
+			int uid = 0;
+			for (GUI::Shortcut& s : GUI::shortcuts)
 			{
-				GUI::shortcuts.erase(GUI::shortcuts.begin() + uid);
-				GUI::save();
-			}
+				ImGui::AlignTextToFramePadding();
+				int displayKeyIndex = s.key - 511;
+				if (displayKeyIndex < 0)
+					displayKeyIndex = 0;
+				ImGui::Text(KeyNames[displayKeyIndex]);
+				GUI::sameLine();
+				ImGui::Text(s.name.c_str());
+				GUI::sameLine(ImGui::GetWindowSize().x - 30);
+				if (GUI::button(std::format("x##{}", std::to_string(uid))))
+				{
+					GUI::shortcuts.erase(GUI::shortcuts.begin() + uid);
+					GUI::save();
+				}
 
-			ImGui::Separator();
-			uid++;
+				ImGui::Separator();
+				uid++;
+			}
 		}
 	}
+
+	bool vsync = GameManager::get()->getGameVariable("0030");
+
+	if(GUI::checkbox("Vsync", &vsync))
+	{
+		GameManager::get()->setGameVariable("0030", vsync);
+		Common::calculateFramerate();
+	}
+
+	if(GUI::button("Uncomplete Level"))
+		Common::uncompleteLevel();
 
 	if (GUI::button("Toggle Practice") && GameManager::get()->getPlayLayer())
 		GameManager::get()->getPlayLayer()->togglePracticeMode(!GameManager::get()->getPlayLayer()->m_isPracticeMode);

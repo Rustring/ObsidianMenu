@@ -23,6 +23,7 @@ using namespace geode::prelude;
 #include "Macrobot/Macrobot.h"
 #include "Macrobot/Record.h"
 #include "Settings.hpp"
+#include "GUI/Blur.h"
 
 void init()
 {
@@ -74,7 +75,7 @@ void initGUI()
 			ImGui::BeginDisabled();
 
 		float tps = Settings::get<float>("general/tps/value", 240.f);
-		if (GUI::inputFloat("##TPSValue", &tps))
+		if (GUI::inputFloat("##TPSValue", &tps, 1.f, 10000.f))
 			Mod::get()->setSavedValue<float>("general/tps/value", tps);
 
 		if (GUI::shouldRender())
@@ -92,7 +93,7 @@ void initGUI()
 			ImGui::EndDisabled();
 
 		float speedhack = Settings::get<float>("general/speedhack/value", 1.f);
-		if (GUI::inputFloat("##SpeedhackValue", &speedhack))
+		if (GUI::inputFloat("##SpeedhackValue", &speedhack), 0.0000001f, 1000.f)
 		{
 			if (speedhack > 0)
 				Mod::get()->setSavedValue<float>("general/speedhack/value", speedhack);
@@ -261,6 +262,39 @@ void initGUI()
 		GUI::checkbox("Hide Pause Button", "general/hide_pause/button");
 		GUI::checkbox("Hide Pause Menu", "general/hide_pause/menu");
 
+		GUI::checkbox("No Shaders", "level/no_shaders");
+		GUI::checkbox("Instant Complete", "level/instant_complete");
+
+		GUI::checkbox("Layout Mode", "level/layout_mode");
+		GUI::checkbox("Hitbox Multiplier", "level/hitbox_multiplier");
+
+		GUI::arrowButton("Hitbox Multiplier Settings");
+		GUI::modalPopup(
+			"Hitbox Multiplier Settings",
+			[] {
+				float scaleSlopes[2] = {Settings::get<float>("level/hitbox_multiplier/scale_slopes/x", 1.f), Settings::get<float>("level/hitbox_multiplier/scale_slopes/y", 1.f)};
+				float scaleHazards[2] = {Settings::get<float>("level/hitbox_multiplier/scale_hazards/x", 1.f), Settings::get<float>("level/hitbox_multiplier/scale_hazards/y", 1.f)};
+				float scalePlayer[2] = {Settings::get<float>("level/hitbox_multiplier/scale_player/x", 1.f), Settings::get<float>("level/hitbox_multiplier/scale_player/y", 1.f)};
+
+				if(GUI::inputFloat2("Slope Scale", scaleSlopes, 0.1f, 4.f, 0.1f, 4.f))
+				{
+					Mod::get()->setSavedValue<float>("level/hitbox_multiplier/scale_slopes/x", scaleSlopes[0]);
+					Mod::get()->setSavedValue<float>("level/hitbox_multiplier/scale_slopes/y", scaleSlopes[1]);
+				}
+
+				if(GUI::inputFloat2("Hazard Scale", scaleHazards, 0.1f, 4.f, 0.1f, 4.f))
+				{
+					Mod::get()->setSavedValue<float>("level/hitbox_multiplier/scale_hazards/x", scaleHazards[0]);
+					Mod::get()->setSavedValue<float>("level/hitbox_multiplier/scale_hazards/y", scaleHazards[1]);
+				}
+
+				if(GUI::inputFloat2("Player Scale", scalePlayer, 0.1f, 4.f, 0.1f, 4.f))
+				{
+					Mod::get()->setSavedValue<float>("level/hitbox_multiplier/scale_player/x", scalePlayer[0]);
+					Mod::get()->setSavedValue<float>("level/hitbox_multiplier/scale_player/y", scalePlayer[1]);
+				}
+			});
+
 		JsonPatches::drawFromPatches(JsonPatches::level);
 	});
 	levelWindow.position = {550, 50};
@@ -301,11 +335,41 @@ void initGUI()
 			},
 			ImGuiWindowFlags_AlwaysAutoResize);
 
+		auto blurSettings = [] {
+				GUI::inputFloat("Blur Darkness", "menu/blur/darkness", 1.f, 0.1f, 1.f);
+				GUI::inputFloat("Blur Size", "menu/blur/size", 1.f, 0.1f, 10.f);
+				GUI::inputInt("Blur Steps", "menu/blur/steps", 10, 5, 20);
+			};
+
+
+		GUI::checkbox("Blur Background", "menu/blur/enabled");
+		
+		if(ImGui::IsItemHovered())
+			ImGui::SetTooltip("WARNING: this option is very performance heavy!");
+		
+		GUI::arrowButton("Blur Settings##0");
+		GUI::modalPopup(
+			"Blur Settings##0",
+			blurSettings,
+			ImGuiWindowFlags_AlwaysAutoResize);
+
+		GUI::checkbox("Blur GD", "menu/blur/gd");
+
+		if(ImGui::IsItemHovered())
+			ImGui::SetTooltip("WARNING: this option is very performance heavy!");
+
+		GUI::arrowButton("Blur Settings##1");
+		GUI::modalPopup(
+			"Blur Settings##1",
+			blurSettings,
+			ImGuiWindowFlags_AlwaysAutoResize);
+
 		float windowColor[3]{
 			Settings::get<float>("menu/window/color/r", 1.f),
 			Settings::get<float>("menu/window/color/g", .0f),
 			Settings::get<float>("menu/window/color/b", .0f)
 		};
+
 
 		if (GUI::colorEdit("Window Color", windowColor))
 		{
@@ -322,12 +386,41 @@ void initGUI()
 			ShellExecute(0, NULL, string::wideToUtf8(Mod::get()->getResourcesDir().wstring()).c_str(), NULL, NULL, SW_SHOW);
 		if (GUI::button("Open Save Folder"))
 			ShellExecute(0, NULL, string::wideToUtf8(Mod::get()->getSaveDir().wstring()).c_str(), NULL, NULL, SW_SHOW);
+		if (GUI::button("Reset Windows"))
+			GUI::resetDefault();
 	});
 	menuSettings.position = {1050, 250};
 	menuSettings.size.y = 300;
 	GUI::addWindow(menuSettings);
 
-	GUI::Window playerWindow("Player", [] { JsonPatches::drawFromPatches(JsonPatches::player); });
+	GUI::Window playerWindow("Player", [] { 
+		JsonPatches::drawFromPatches(JsonPatches::player);
+		
+		GUI::checkbox("Custom Wave Trail", "player/trail/enabled");
+
+		GUI::arrowButton("Wave Customization");
+		GUI::modalPopup(
+			"Wave Customization",
+			[]{
+				GUI::inputFloat("Wave Trail Size", "player/trail/size", 1.f, 0.f, 100.f);
+
+				float trailColor[3]{
+					Settings::get<float>("player/trail/color/r", 1.f),
+					Settings::get<float>("player/trail/color/g", 1.0f),
+					Settings::get<float>("player/trail/color/b", 1.0f)
+				};
+
+				GUI::checkbox("Wave Trail Color", "player/trail/color/enabled");
+
+				if (GUI::colorEdit("Trail Color", trailColor))
+				{
+					Mod::get()->setSavedValue<float>("player/trail/color/r", trailColor[0]);
+					Mod::get()->setSavedValue<float>("player/trail/color/g", trailColor[1]);
+					Mod::get()->setSavedValue<float>("player/trail/color/b", trailColor[2]);
+				}
+			},
+			ImGuiWindowFlags_AlwaysAutoResize);
+	});
 	playerWindow.position = {800, 50};
 	playerWindow.size.y = 180;
 	GUI::addWindow(playerWindow);

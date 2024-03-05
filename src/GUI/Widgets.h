@@ -30,8 +30,11 @@ namespace GUI
 	bool checkbox(const std::string&, const std::string&, bool = false);
 	bool inputText(const std::string&, std::string*);
 	bool inputInt(const std::string&, int*, int = -INT_MAX, int = INT_MAX);
+	bool inputInt(const std::string&, const std::string&, int, int = -INT_MAX, int = INT_MAX);
 	bool inputInt2(const std::string&, int*, int = -INT_MAX, int = INT_MAX, int = -INT_MAX, int = INT_MAX);
+	bool inputFloat2(const std::string&, float*, float = -FLT_MAX, float = FLT_MAX, float = -FLT_MAX, float = FLT_MAX);
 	bool inputFloat(const std::string&, float*, float = -FLT_MAX, float = FLT_MAX);
+	bool inputFloat(const std::string&, const std::string&, float, float = -FLT_MAX, float = FLT_MAX);
 	bool dragInt(const std::string&, int*, int = -INT_MAX, int = INT_MAX);
 	bool dragFloat(const std::string&, float*, float = -FLT_MAX, float = FLT_MAX);
 	bool combo(const std::string&, int*, const char* const[], int);

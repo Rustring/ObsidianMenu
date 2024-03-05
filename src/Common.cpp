@@ -25,6 +25,12 @@ using namespace geode::prelude;
 
 void Common::calculateFramerate()
 {
+	bool vsync = GameManager::get()->getGameVariable("0030");
+	CCApplication::sharedApplication()->toggleVerticalSync(vsync);
+
+	if(vsync)
+		return;
+
 	float framerate = 60.f;
 	float interval = 60.f;
 
@@ -181,7 +187,12 @@ void Common::updateCheating()
 	bool showHitbox = Settings::get<bool>("level/show_hitbox/enabled", false);
 	bool onDeath = Settings::get<bool>("level/show_hitbox/on_death", false);
 
-	if (speedhack != 1.f || Macrobot::playerMode == 0 || (showHitbox && !onDeath) || Settings::get<bool>("general/hide_pause/menu"))
+	bool hidePause = Settings::get<bool>("general/hide_pause/menu");
+	bool noShaders = Settings::get<bool>("level/no_shaders", false);
+	bool instantComplete = Settings::get<bool>("level/instant_complete", false);
+	bool hitboxMultiplier = Settings::get<bool>("level/hitbox_multiplier", false);
+
+	if (speedhack != 1.f || Macrobot::playerMode == 0 || (showHitbox && !onDeath) || hidePause || hitboxMultiplier || noShaders || instantComplete)
 	{
 		isCheating = true;
 		return;
@@ -209,6 +220,52 @@ void Common::updateCheating()
 	isCheating = false;
 }
 
+class $modify(PlayLayer)
+{
+	void updateVisibility(float dt)
+	{
+		PlayLayer::updateVisibility(dt);
+
+		bool doLoop = false;
+
+		for(auto &pair : Common::sectionLoopFunctions)
+		{
+			bool setting = Settings::get<bool>(pair.second, false);
+			doLoop |= setting;
+		}
+
+		if(!doLoop)
+			return;
+
+		int cameraSection = MBO(int, this, 10676);
+		int cameraSectionLast = MBO(int, this, 10680);
+
+		gd::vector<gd::vector<gd::vector<GameObject*>*>*> sections = MBO(gd::vector<gd::vector<gd::vector<GameObject*>*>*>, this, 11336);
+
+		for(int i = cameraSection; i < cameraSectionLast; i++)
+		{
+			if(!sections.at(i))
+				continue;
+
+			for(int j = 0; j < sections.at(i)->size(); j++)
+			{
+				if(!sections.at(i)->at(j))
+					continue;
+
+				for(int k = 0; k < sections.at(i)->at(j)->size(); k++)
+				{
+					auto obj = sections.at(i)->at(j)->at(k);
+					for(auto &pair : Common::sectionLoopFunctions)
+					{
+						if(Settings::get<bool>(pair.second, false))
+							pair.first(obj);
+					}
+				}
+			}
+		}
+	}
+};
+
 class $modify(MenuLayer)
 {
 	bool init()
@@ -219,3 +276,26 @@ class $modify(MenuLayer)
 		return MenuLayer::init();
 	}
 };
+
+void Common::uncompleteLevel()
+{
+	if(!GameManager::get()->getPlayLayer())
+	{
+		FLAlertLayer::create("Error", "Enter a level first!", "Ok")->show();
+		return;
+	}
+	GJGameLevel* level = GameManager::get()->getPlayLayer()->m_level;
+
+	//uncompleteLevel()
+	reinterpret_cast<void(__thiscall *)(GameStatsManager*, GJGameLevel*)>(base::get() + 0x170400)(GameStatsManager::sharedState(), level);
+	level->m_practicePercent = 0;
+	level->m_normalPercent = 0;
+	level->m_newNormalPercent2 = 0;
+	level->m_orbCompletion = 0;
+	level->m_54 = 0;
+	level->m_k111 = 0;
+	level->m_bestPoints = 0;
+	level->m_bestTime = 0;
+
+	GameLevelManager::sharedState()->saveLevel(level);
+}
