@@ -9,7 +9,7 @@ body:
         When submitting a crash report, please make sure it's a crash report.
         Failing to do this will get your issue *closed without explanation*.
       options:
-        - label: I confirm that this bug is NOT an issue with the GD Mega Overlay code.
+        - label: I confirm that this crash is NOT an issue with the GD Mega Overlay code.
           required: true
   - type: dropdown
     id: platform
