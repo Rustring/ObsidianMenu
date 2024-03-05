@@ -10,6 +10,10 @@ Free, open source, feature-rich Geometry Dash menu, based on GDMegaOverlay. Curr
 
 ![Menu screen](/img/screen.png)
 
+## ATENSION!!
+
+This is **NOT** meant to rival GD Mega Overlay. it is just a **FUN** project for me to work on, Do **NOT** beg for updates or for this to sync with GDMO's updates, if you want GDMO support use maxnu's project, I will ""NOT"" fix GDMO's issues leave them to the GDMO devs to fix or say them to fix.
+
 ## Installation
 
 > **Warning** <br>
@@ -20,7 +24,7 @@ Free, open source, feature-rich Geometry Dash menu, based on GDMegaOverlay. Curr
 ---
 [**Install Geode. This is required for the mod menu to work!**](https://geode-sdk.org/install/)
 
-Download the latest [build](https://github.com/maxnut/GDMegaOverlay/releases/latest) from the Github releases page. <br>
+Download the latest [build](https://github.com/Rustring/GDModHack/releases) from the Github releases page. <br>
 
 Manual Installations using Steam:
 1. Go onto Steam, and go onto the Geometry Dash page in your library.
