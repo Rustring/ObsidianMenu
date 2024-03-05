@@ -1,6 +1,6 @@
 name: Crash Report
 description: Self Explanatory.
-labels: [ "unverified", "crash" ]
+labels: [ "crash" ]
 body:
   - type: checkboxes
     attributes:
