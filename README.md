@@ -1,6 +1,6 @@
 <div align="center">
 
-# GD Mod Hack (Please Maxnu don't see this)
+# GD Mod Hack (Please maxnu don't see this)
 
 <div align="left">
 
