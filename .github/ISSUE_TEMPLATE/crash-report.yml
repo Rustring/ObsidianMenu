@@ -19,6 +19,7 @@ body:
       options:
         - "Windows"
         - "Linux"
+        - "MacOS (Windows Vsersion of GD)"
         - "Other (Windows Vsersion of GD)"
     validations:
       required: true
