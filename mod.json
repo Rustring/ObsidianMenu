@@ -3,11 +3,11 @@
 	"gd": {
 		"win": "2.204"
     },
-	"version": "v1.0.0-alpha.3",
+	"version": "v1.0.0",
 	"id": "rustring.gd_mod_hack",
 	"name": "GD Mod Hack",
 	"developer": "Rustring",
-	"description": "GDMO Fork, Free, feature-rich, gui-integrated geometry dash mod menu",
+	"description": "My own modification of GD Mega Overlay",
 	"repository": "https://github.com/Rustring/GDModHack",
 	"resources": {
 		"files": [
