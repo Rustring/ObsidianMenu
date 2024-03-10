@@ -23,8 +23,7 @@ void glViewportHook(GLint a, GLint b, GLsizei c, GLsizei d)
 {
 	if(visiting && recorder.m_recording && inShader)
 	{
-		ImVec2 screenSize = ImGui::GetIO().DisplaySize;
-		if(c == screenSize.x && d == screenSize.y)
+		if(c != 2608 && d != 2608)
 		{
 			c = Settings::get<int>("recorder/resolution/x", 1920);
 			d = Settings::get<int>("recorder/resolution/y", 1080);
@@ -58,6 +57,13 @@ class $modify(PlayLayer)
 		PlayLayer::onQuit();
 	}
 
+	bool init(GJGameLevel* level, bool unk1, bool unk2)
+	{
+		bool res = PlayLayer::init(level, unk1, unk2);
+		endLevelLayer = nullptr;
+		return res;
+	}
+
 	void levelComplete()
 	{
 		PlayLayer::levelComplete();
@@ -68,6 +74,15 @@ class $modify(PlayLayer)
 	{
 		levelDone = false;
 		PlayLayer::resetLevel();
+	}
+};
+
+class $modify(EndLevelLayer)
+{
+	void showLayer(bool unk)
+	{
+		endLevelLayer = this;
+		return EndLevelLayer::showLayer(unk);
 	}
 };
 
@@ -87,6 +102,27 @@ class $modify(GJBaseGameLayer)
 Recorder::Recorder()
 	: m_width(1280), m_height(720), m_fps(60)
 {}
+
+void Recorder::start_audio()
+{
+	std::string level_id = PlayLayer::get()->m_level->m_levelName.c_str() + ("_" + std::to_string(PlayLayer::get()->m_level->m_levelID.value()));
+	auto path = Mod::get()->getSaveDir() / "renders" / level_id / "rendered_video.mp4";
+	bool hasVideo = ghc::filesystem::exists(path);
+
+	if(!hasVideo)
+	{
+		FLAlertLayer::create("Error", ("The render for the level has not been found!\n" + string::wideToUtf8(path.wstring())).c_str(), "Ok")->show();
+		return;
+	}
+
+	levelDone = false;
+	m_after_end_duration = Settings::get<float>("recorder/after_end", 5.f);
+	m_after_end_extra_time = 0.f;
+
+	recorder.m_recording_audio = true;
+	PlayLayer::get()->resetLevelFromStart();
+	recorder.m_recording = false;
+}
 
 void Recorder::start()
 {
@@ -131,11 +167,11 @@ void Recorder::start()
 	m_renderer.begin();
 	tfx = 0;
 
-	m_song_start_offset = GameManager::get()->getPlayLayer()->m_levelSettings->m_songOffset;
+	m_song_start_offset = PlayLayer::get()->m_levelSettings->m_songOffset;
 
-	GameManager::get()->getPlayLayer()->resetLevel();
+	PlayLayer::get()->resetLevel();
 
-	std::string level_id = GameManager::get()->getPlayLayer()->m_level->m_levelName.c_str() + ("_" + std::to_string(GameManager::get()->getPlayLayer()->m_level->m_levelID.value()));
+	std::string level_id = PlayLayer::get()->m_level->m_levelName.c_str() + ("_" + std::to_string(PlayLayer::get()->m_level->m_levelID.value()));
 	auto bg_volume = 1;
 	auto sfx_volume = 1;
 
@@ -245,7 +281,7 @@ void MyRenderTexture::capture(std::mutex &lock, std::vector<u8> &data, volatile 
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_fbo);
 
 	visiting = true;
-	GameManager::get()->getPlayLayer()->visit();
+	PlayLayer::get()->visit();
 	visiting = false;
 
 	glPixelStorei(GL_PACK_ALIGNMENT, 1);
@@ -281,9 +317,9 @@ void Recorder::stop_audio()
 	GJGameLevel *level =
 		GameManager::get()
 			->getPlayLayer()
-			->m_level; // MBO(gd::GJGameLevel*, GameManager::get()->getPlayLayer(), 1504); // found in playlayer_init
+			->m_level; // MBO(gd::GJGameLevel*, PlayLayer::get(), 1504); // found in playlayer_init
 
-	std::string level_id = GameManager::get()->getPlayLayer()->m_level->m_levelName.c_str() + ("_" + std::to_string(GameManager::get()->getPlayLayer()->m_level->m_levelID.value()));
+	std::string level_id = PlayLayer::get()->m_level->m_levelName.c_str() + ("_" + std::to_string(PlayLayer::get()->m_level->m_levelID.value()));
 
 	ghc::filesystem::path video_path = Mod::get()->getSaveDir() / "renders" / level_id / "rendered_video.mp4";
 
@@ -344,7 +380,7 @@ void Recorder::handle_recording(GJBaseGameLayer *play_layer, float dt)
 			tfx = play_layer->timeForXPos(play_layer->m_pPlayer1->getPositionX());
 		else */
 		tfx += dt;
-		float timewarp = MBO(float, GameManager::get()->getPlayLayer(), 724);
+		float timewarp = MBO(float, PlayLayer::get(), 724);
 
 		auto frame_dt = 1. / static_cast<double>(m_fps) * timewarp;
 		auto time = tfx + m_extra_t - m_last_frame_t;
@@ -363,7 +399,7 @@ void Recorder::handle_recording(GJBaseGameLayer *play_layer, float dt)
 
 void Record::renderWindow()
 {
-	bool disabled = !GameManager::get()->getPlayLayer() || Record::recorder.m_recording_audio || Macrobot::macro.inputs.size() <= 0 || Macrobot::playerMode != 0;
+	bool disabled = !PlayLayer::get() || levelDone || Record::recorder.m_recording_audio || Record::recorder.m_recording || Macrobot::macro.inputs.size() <= 0 || Macrobot::playerMode != 0;
 	if (disabled)
 		ImGui::BeginDisabled();
 
@@ -381,51 +417,64 @@ void Record::renderWindow()
 				std::cout << e.what() << '\n';
 			}
 		}
-		Record::recorder.start();
+		if (ghc::filesystem::exists("ffmpeg.exe"))
+			Record::recorder.start();
+		else
+			FLAlertLayer::create("Error", "FFmpeg not found", "Ok")->show();
 	}
 
 	if(GUI::shouldRender() && disabled && ImGui::IsItemHovered())
 		ImGui::SetTooltip("You need to be playing a macro to record");
 
-	if (GUI::button("Stop Recording") && Record::recorder.m_recording)
+	if (disabled)
+		ImGui::EndDisabled();
+
+	disabled = !PlayLayer::get() || levelDone || Record::recorder.m_recording_audio || !Record::recorder.m_recording || Macrobot::macro.inputs.size() <= 0 || Macrobot::playerMode != 0;
+	if (disabled)
+		ImGui::BeginDisabled();
+
+	if (GUI::button("Stop Recording"))
 		Record::recorder.stop();
 
 	if (disabled)
 		ImGui::EndDisabled();
+
+	disabled = !PlayLayer::get() || levelDone || Record::recorder.m_recording || Record::recorder.m_recording_audio || Macrobot::macro.inputs.size() <= 0 || Macrobot::playerMode != 0;
 
 	if (disabled)
 		ImGui::BeginDisabled();
 
 	if (GUI::button("Start Audio"))
 	{
-		std::string level_id = GameManager::get()->getPlayLayer()->m_level->m_levelName.c_str() + ("_" + std::to_string(GameManager::get()->getPlayLayer()->m_level->m_levelID.value()));
-		auto path = Mod::get()->getSaveDir() / "renders" / level_id / "rendered_video.mp4";
-		bool hasVideo = ghc::filesystem::exists(path);
-
-		if(!hasVideo)
-			FLAlertLayer::create("Error", ("The render for the level has not been found!\n" + string::wideToUtf8(path.wstring())).c_str(), "Ok")->show();
-		else
+		if (!ghc::filesystem::exists("ffmpeg.exe"))
 		{
-			if (!ghc::filesystem::exists("ffmpeg.exe"))
+			auto process = subprocess::Popen(string::wideToUtf8((Mod::get()->getResourcesDir() / "get_ffmpeg.exe").wstring()));
+			try
 			{
-				auto process = subprocess::Popen(string::wideToUtf8((Mod::get()->getResourcesDir() / "get_ffmpeg.exe").wstring()));
-				try
-				{
-					process.close();
-				}
-				catch (const std::exception &e)
-				{
-					std::cout << e.what() << '\n';
-				}
+				process.close();
 			}
-			recorder.m_recording_audio = true;
-			Record::recorder.start();
-			recorder.m_recording = false;
+			catch (const std::exception &e)
+			{
+				std::cout << e.what() << '\n';
+			}
 		}
+
+		if (ghc::filesystem::exists("ffmpeg.exe"))
+			recorder.start_audio();
+		else
+			FLAlertLayer::create("Error", "FFmpeg not found", "Ok")->show();
 	}
 
 	if(GUI::shouldRender() && disabled && ImGui::IsItemHovered())
 		ImGui::SetTooltip("You need to be playing a macro to record");
+
+	if (disabled)
+		ImGui::EndDisabled();
+
+	disabled = !PlayLayer::get() || levelDone || Record::recorder.m_recording || !Record::recorder.m_recording_audio || Macrobot::macro.inputs.size() <= 0 || Macrobot::playerMode != 0;
+
+	if (disabled)
+		ImGui::BeginDisabled();
 
 	if (GUI::button("Stop Audio") && Record::recorder.m_recording_audio)
 	{

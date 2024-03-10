@@ -145,7 +145,7 @@ void GUI::draw()
 	for (Window& w : windows)
 		w.draw();
 
-	float transitionDuration = Settings::get<float>("menu/transition_duration", 0.35f);
+	float transitionDuration = Settings::get<float>("menu/transition_duration", 0.25f);
 
 	hideTimer += ImGui::GetIO().DeltaTime;
 	if (hideTimer > transitionDuration)

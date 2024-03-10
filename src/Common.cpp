@@ -200,7 +200,7 @@ void Common::updateCheating()
 
 	float tps = getTPS();
 
-	PlayLayer* pl = GameManager::get()->getPlayLayer();
+	PlayLayer* pl = PlayLayer::get();
 
 	if(pl)
 	{
@@ -244,18 +244,31 @@ class $modify(PlayLayer)
 
 		for(int i = cameraSection; i < cameraSectionLast; i++)
 		{
-			auto s0 = sections.at(i);
-			if(sections.size() <= i || !s0)
+			if(sections.size() <= i)
 				continue;
+
+			auto s0 = sections.at(i);
+
+			if(!s0)
+				continue;
+
+			bool hasObjects = false;
 
 			for(int j = 0; j < s0->size(); j++)
 			{
+				if(s0->size() <= j)
+					continue;
+				
 				auto s1 = s0->at(j);
 				if(!s1)
 					continue;
 
 				for(int k = 0; k < s1->size(); k++)
 				{
+					if(s1->size() <= k)
+						continue;
+					
+					hasObjects = true;
 					auto obj = s1->at(k);
 					for(auto &pair : Common::sectionLoopFunctions)
 					{
@@ -265,6 +278,11 @@ class $modify(PlayLayer)
 				}
 			}
 		}
+	}
+
+	void resetLevel()
+	{
+		PlayLayer::resetLevel();
 	}
 };
 
@@ -281,12 +299,12 @@ class $modify(MenuLayer)
 
 void Common::uncompleteLevel()
 {
-	if(!GameManager::get()->getPlayLayer())
+	if(!PlayLayer::get())
 	{
 		FLAlertLayer::create("Error", "Enter a level first!", "Ok")->show();
 		return;
 	}
-	GJGameLevel* level = GameManager::get()->getPlayLayer()->m_level;
+	GJGameLevel* level = PlayLayer::get()->m_level;
 
 	//uncompleteLevel()
 	reinterpret_cast<void(__thiscall *)(GameStatsManager*, GJGameLevel*)>(base::get() + 0x170400)(GameStatsManager::sharedState(), level);
