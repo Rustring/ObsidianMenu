@@ -22,6 +22,8 @@ This is **NOT** meant to rival GD Mega Overlay. it is just a **FUN** project for
 > **Note:** <br>
 > This Project only supports **Windows** and **Linux** (Through WINE) (I use Arch btw).
 ---
+## Geode Installation
+
 [**Install Geode. This is required for the mod menu to work!**](https://geode-sdk.org/install/)
 
 Download the latest [build](https://github.com/Rustring/GDModHack/releases) from the Github releases page. <br>
