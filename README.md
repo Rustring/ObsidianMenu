@@ -6,7 +6,9 @@
 
 ## Description
 
-My very own modificaion of GDMegaOverlay. Currently supports Geometry Dash 2.204.
+My very own modificaion of GDMegaOverlay. Currently supports Geometry Dash 2.204
+
+## Sorry for no updates at the moment, Openhack has better features defeating any motivation for me to continue this, don't worry I'll still maintain the project and an update should release soon I hope
 
 ![Menu screen](/img/screen.png)
 
