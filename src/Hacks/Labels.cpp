@@ -39,8 +39,10 @@ Labels::Label Labels::setupLabel(const std::string& labelSettingName,
 
 class $modify(PlayLayer)
 {
+
 	bool init(GJGameLevel* p0, bool p1, bool p2)
 	{
+		levelCompleted = false;
 		labels.clear();
 		bool res = PlayLayer::init(p0, p1, p2);
 
@@ -123,7 +125,7 @@ class $modify(PlayLayer)
 
 				if (!noclipDead)
 				{
-					if (acc <= limit)
+					if (acc <= limit && limit > 0)
 						noclipDead = true;
 					pointer->setString(
 						frames == 0
@@ -156,9 +158,9 @@ class $modify(PlayLayer)
 		setupLabel(
 			"Best Run",
 			[&](cocos2d::CCLabelBMFont* pointer) {
-			if(bestRun.first == 0)
+			if (bestRun.first == 0)
 			{
-				if(bestRun.second == 0)
+				if (bestRun.second == 0)
 					pointer->setString("Best Run: None");
 				else
 					pointer->setString(fmt::format("Best Run: {}%", (int)bestRun.second).c_str());
@@ -181,9 +183,9 @@ class $modify(PlayLayer)
 		setupLabel(
 			"Macro Info",
 			[&](cocos2d::CCLabelBMFont* pointer) {
-			if(Macrobot::playerMode == Macrobot::PLAYBACK)
+			if (Macrobot::playerMode == Macrobot::PLAYBACK)
 				pointer->setString(fmt::format("Playing {}/{}", Macrobot::actionIndex, Macrobot::macro.inputs.size()).c_str());
-			else if(Macrobot::playerMode == Macrobot::RECORDING)
+			else if (Macrobot::playerMode == Macrobot::RECORDING)
 				pointer->setString(fmt::format("Recording {}", Macrobot::macro.inputs.size()).c_str());
 			else
 				pointer->setString("");
@@ -202,28 +204,28 @@ class $modify(PlayLayer)
 
 	void destroyPlayer(PlayerObject* player, GameObject* object)
 	{
-		if(!anticheatSpike && frames < 5)
+		if (!anticheatSpike && frames < 5)
 			anticheatSpike = object;
 
-		if(object == anticheatSpike)
+		if (object == anticheatSpike)
 			return PlayLayer::destroyPlayer(player, object);
 
-		if(noclipDead)
+		if (noclipDead)
 			JsonPatches::togglePatch(JsonPatches::player, "NoClip", false);
 
 		PlayLayer::destroyPlayer(player, object);
 
-		if(noclipDead)
+		if (noclipDead)
 			JsonPatches::togglePatch(JsonPatches::player, "NoClip", true);
 
-		if(player && player->m_isDead)
+		if (player && player->m_isDead)
 		{
 			currentRun.second = this->getCurrentPercent();
 
 			float currentRunTotal = currentRun.second - currentRun.first;
 			float bestRunTotal = bestRun.second - bestRun.first;
 
-			if(currentRunTotal > bestRunTotal)
+			if (currentRunTotal > bestRunTotal)
 				bestRun = currentRun;
 		}
 
@@ -234,10 +236,11 @@ class $modify(PlayLayer)
 	{
 		PlayLayer::levelComplete();
 		currentRun.second = PlayLayer::getCurrentPercent();
+		levelCompleted = true;
 
 		float currentRunTotal = currentRun.second - currentRun.first;
 		float bestRunTotal = bestRun.second - bestRun.first;
-		if(currentRunTotal > bestRunTotal)
+		if (currentRunTotal > bestRunTotal)
 			bestRun = currentRun;
 	}
 
@@ -246,6 +249,7 @@ class $modify(PlayLayer)
 		Common::updateCheating();
 		SafeMode::updateAuto();
 		noclipDead = false;
+		levelCompleted = false;
 		dead = false;
 		totalClicks = 0;
 		frames = 0;
@@ -295,17 +299,21 @@ void Labels::GJBaseGameLayerProcessCommands(GJBaseGameLayer *self)
 
 	if (labelsCreated)
 	{
+		bool hide = Settings::get<bool>("labels/hideAll", false);
 		for (Label& l : labels)
 		{
 			int opacity = Settings::get<int>("labels/" + l.settingName + "/opacity", 150);
-			l.pointer->setOpacity(opacity);
-			l.process();
+			l.pointer->setOpacity(hide ? 0 : opacity);
+			
+			if(!hide)
+				l.process();
 		}
 	}
 
 	clickRegistered = false;
 
-	frames++;
+	if(!levelCompleted)
+		frames++;
 
 	if (dead)
 	{
@@ -335,8 +343,10 @@ class $modify(PlayerObject)
 			clicks.push_back(GetTickCount());
 			clickRegistered = true;
 		}
+		if(!click)
+			totalClicks++;
+		
 		click = true;
-		totalClicks++;
 		PlayerObject::pushButton(btn);
 	}
 
@@ -470,6 +480,7 @@ void Labels::settingsForLabel(const std::string& labelSettingName, std::function
 
 void Labels::renderWindow()
 {
+	GUI::checkbox("Hide All", "labels/hideAll");
 	settingsForLabel("Cheat Indicator", [] {});
 	settingsForLabel("Framerate", [] {});
 	settingsForLabel("CPS", [] {

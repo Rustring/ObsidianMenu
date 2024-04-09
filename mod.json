@@ -2,12 +2,12 @@
 	"geode": "2.0.0",
 	"gd": {
 		"win": "2.204"
-    },
-	"version": "v1.0.1",
+	},
+	"version": "v1.1.0",
 	"id": "rustring.gd_mod_hack",
 	"name": "GD Mod Hack",
-	"developer": "Rustring",
-	"description": "My own modification of GD Mega Overlay, free, feature-rich, gui-integrated geometry dash mod menu",
+	"developers": ["Rustring"],
+	"description": "Free, feature-rich, gui-integrated geometry dash mod menu",
 	"repository": "https://github.com/Rustring/GDModHack",
 	"resources": {
 		"files": [
@@ -15,7 +15,15 @@
 			"res/Style.style",
 			"res/arial.ttf",
 			"res/get_ffmpeg/*",
-			"res/default_windows.json"
+			"res/default_windows.json",
+			"res/shadow.png"
 		]
-	}
+	},
+	"dependencies": [
+		{
+            "id": "geode.node-ids",
+            "version": ">=v1.7.1",
+            "importance": "required"
+        }
+	]
 }

@@ -28,7 +28,7 @@ void Common::calculateFramerate()
 	bool vsync = GameManager::get()->getGameVariable("0030");
 	CCApplication::sharedApplication()->toggleVerticalSync(vsync);
 
-	if(vsync)
+	if (vsync)
 		return;
 
 	float framerate = 60.f;
@@ -125,9 +125,9 @@ float Common::getTPS()
 		tps = Settings::get<float>("general/tps/value", 240.f);
 	else
 		tps = 240.f;
-	if(Macrobot::playerMode == Macrobot::PLAYBACK)
+	if (Macrobot::playerMode == Macrobot::PLAYBACK)
 		tps = Macrobot::macro.framerate;
-	if(tps < 1.f)
+	if (tps < 1.f)
 		tps = 1.f;
 
 	return tps;
@@ -191,8 +191,9 @@ void Common::updateCheating()
 	bool noShaders = Settings::get<bool>("level/no_shaders", false);
 	bool instantComplete = Settings::get<bool>("level/instant_complete", false);
 	bool hitboxMultiplier = Settings::get<bool>("level/hitbox_multiplier", false);
+	bool layoutMode = Settings::get<bool>("level/layout_mode", false);
 
-	if (speedhack != 1.f || Macrobot::playerMode == 0 || (showHitbox && !onDeath) || hidePause || hitboxMultiplier || noShaders || instantComplete)
+	if (speedhack != 1.f || Macrobot::playerMode == 0 || (showHitbox && !onDeath) || hidePause || hitboxMultiplier || noShaders || instantComplete || layoutMode)
 	{
 		isCheating = true;
 		return;
@@ -202,15 +203,15 @@ void Common::updateCheating()
 
 	PlayLayer* pl = PlayLayer::get();
 
-	if(pl)
+	if (pl)
 	{
 		int levelID = pl->m_level->m_levelID;
-		if(levelID <= 97454394 && levelID != 0 && tps > 360)
+		if (levelID <= 97454394 && levelID != 0 && tps > 360)
 		{
 			isCheating = true;
 			return;
 		}
-		else if((levelID > 97454394 || levelID == 0) && tps > 240)
+		else if ((levelID > 97454394 || levelID == 0) && tps > 240)
 		{
 			isCheating = true;
 			return;
@@ -234,7 +235,7 @@ class $modify(PlayLayer)
 			doLoop |= setting;
 		}
 
-		if(!doLoop)
+		if (!doLoop)
 			return;
 
 		int cameraSection = MBO(int, this, 10676);
@@ -244,35 +245,39 @@ class $modify(PlayLayer)
 
 		for(int i = cameraSection; i < cameraSectionLast; i++)
 		{
-			if(sections.size() <= i)
+			if (sections.size() <= i)
 				continue;
 
 			auto s0 = sections.at(i);
 
-			if(!s0)
+			if (!s0)
 				continue;
 
 			bool hasObjects = false;
 
 			for(int j = 0; j < s0->size(); j++)
 			{
-				if(s0->size() <= j)
+				if (s0->size() <= j)
 					continue;
 				
 				auto s1 = s0->at(j);
-				if(!s1)
+				if (!s1)
 					continue;
 
 				for(int k = 0; k < s1->size(); k++)
 				{
-					if(s1->size() <= k)
+					if (s1->size() <= k)
 						continue;
 					
 					hasObjects = true;
 					auto obj = s1->at(k);
+
+					if(!obj || obj->retainCount() == 0)
+						continue;
+
 					for(auto &pair : Common::sectionLoopFunctions)
 					{
-						if(Settings::get<bool>(pair.second, false))
+						if (Settings::get<bool>(pair.second, false))
 							pair.first(obj);
 					}
 				}
@@ -299,9 +304,9 @@ class $modify(MenuLayer)
 
 void Common::uncompleteLevel()
 {
-	if(!PlayLayer::get())
+	if (!PlayLayer::get())
 	{
-		FLAlertLayer::create("Error", "Enter a level first!", "Ok")->show();
+		Common::showWithPriority(FLAlertLayer::create("Error", "Enter a level first!", "Ok"));
 		return;
 	}
 	GJGameLevel* level = PlayLayer::get()->m_level;
@@ -318,4 +323,13 @@ void Common::uncompleteLevel()
 	level->m_bestTime = 0;
 
 	GameLevelManager::sharedState()->saveLevel(level);
+}
+
+void Common::showWithPriority(FLAlertLayer* alert)
+{
+	alert->show();
+	if (auto delegate = typeinfo_cast<CCTouchDelegate*>(alert)) {
+        if (auto handler = CCTouchDispatcher::get()->findHandler(delegate))
+            CCTouchDispatcher::get()->setPriority(-600, handler->getDelegate());
+    }
 }

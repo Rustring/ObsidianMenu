@@ -9,7 +9,6 @@
 #include <subprocess.hpp>
 #include <string>
 #include <Geode/modify/GJBaseGameLayer.hpp>
-#include <Geode/modify/EndLevelLayer.hpp>
 
 using namespace cocos2d;
 
@@ -40,7 +39,7 @@ public:
 	bool m_recording = false;
 	double m_last_frame_t, m_extra_t;
 	bool m_until_end = true;
-	std::string m_codec = "", m_bitrate = "30M", m_extra_args = "", m_extra_args_after = "", m_extra_audio_args = "";
+	std::string m_codec = "", m_bitrate = "30M", m_extra_args = "", m_extra_args_after = "", m_extra_args_video = "";
 	float m_after_end_duration;
 	float m_after_end_extra_time;
 	float m_song_start_offset;
@@ -71,8 +70,7 @@ namespace Record
 	inline Recorder recorder;
 	inline bool visiting = false;
 	inline bool inShader = false;
-
-	inline EndLevelLayer* endLevelLayer = nullptr;
+	inline std::string renderPath = "";
 
 	void renderWindow();
 }

@@ -28,7 +28,7 @@ namespace GUI
 	bool button(const std::string&);
 	bool checkbox(const std::string&, bool*);
 	bool checkbox(const std::string&, const std::string&, bool = false);
-	bool inputText(const std::string&, std::string*);
+	bool inputText(const std::string&, std::string*, float = 80);
 	bool inputInt(const std::string&, int*, int = -INT_MAX, int = INT_MAX);
 	bool inputInt(const std::string&, const std::string&, int, int = -INT_MAX, int = INT_MAX);
 	bool inputInt2(const std::string&, int*, int = -INT_MAX, int = INT_MAX, int = -INT_MAX, int = INT_MAX);
@@ -46,7 +46,9 @@ namespace GUI
 	void marker(const std::string&, const std::string&);
 	void textURL(const std::string&, const std::string&);
 	void sameLine(float offset_from_start_x = 0, float spacing_w = -1);
-
+	void pushItemWidth(float width);
+	void popItemWidth();
+	void tooltip(const std::string);
 
 	bool customCheckbox(const char* label, bool* v);
 };

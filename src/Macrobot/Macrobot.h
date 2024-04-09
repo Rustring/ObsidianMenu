@@ -79,7 +79,7 @@ namespace Macrobot
 			if (obj.contains("correction"))
 			{
 				Correction c;
-				if(obj["correction"].contains("frame"))
+				if (obj["correction"].contains("frame"))
 					c.frame = obj["correction"]["frame"];
 				c.player2 = obj["correction"]["player2"];
 				c.checkpoint.xVel = obj["correction"]["xVel"];
@@ -125,11 +125,14 @@ namespace Macrobot
 	inline bool botInput = false;
 	inline bool resetFrame = false;
 	inline bool resetFromStart = true;
+	inline bool holdingAdvance = false;
 
 	inline PlayerMode playerMode = DISABLED;
 
 	inline unsigned int actionIndex = 0;
 	inline unsigned int targetSteps = 0;
+
+	inline float advanceHoldTime = 0;
 
 	inline int8_t direction = 0;
 

@@ -71,7 +71,7 @@ void initGUI()
 		if (GUI::checkbox("Framerate", "general/fps/enabled"))
 			Common::calculateFramerate();
 
-		if(Macrobot::playerMode == Macrobot::RECORDING || Macrobot::playerMode == Macrobot::PLAYBACK)
+		if (Macrobot::playerMode == Macrobot::RECORDING || Macrobot::playerMode == Macrobot::PLAYBACK)
 			ImGui::BeginDisabled();
 
 		float tps = Settings::get<float>("general/tps/value", 240.f);
@@ -89,7 +89,7 @@ void initGUI()
 		if (GUI::checkbox("Physics Bypass", "general/tps/enabled"))
 			PhysicsBypass::calculateTickrate();
 
-		if(Macrobot::playerMode == Macrobot::RECORDING || Macrobot::playerMode == Macrobot::PLAYBACK)
+		if (Macrobot::playerMode == Macrobot::RECORDING || Macrobot::playerMode == Macrobot::PLAYBACK)
 			ImGui::EndDisabled();
 
 		float speedhack = Settings::get<float>("general/speedhack/value", 1.f);
@@ -100,7 +100,7 @@ void initGUI()
 		}
 
 		GUI::sameLine();
-		if(GUI::checkbox("Speedhack", "general/speedhack/enabled"))
+		if (GUI::checkbox("Speedhack", "general/speedhack/enabled"))
 			Common::onAudioSpeedChange();
 
 		float pitch = Settings::get<float>("general/music/pitch/value", 1.f);
@@ -116,6 +116,8 @@ void initGUI()
 		}
 		if (GUI::checkbox("Pitch Shift", "general/music/pitch/enabled"))
 			Common::onAudioPitchChange();
+
+		GUI::tooltip("Changes the pitch of the game audio without changing the length");
 
 		float music_speed = Settings::get<float>("general/music/speed/value", 1.f);
 		if (GUI::inputFloat("##MusicSpeedValue", &music_speed))
@@ -146,12 +148,16 @@ void initGUI()
 		if (GUI::checkbox("Tie Music To Game Speed", "general/tie_to_game_speed/music/enabled"))
 			Common::onAudioSpeedChange();
 
+		GUI::tooltip("Makes game music adapt based on speedhack");
+
 		int priority = Settings::get<int>("general/priority", 2);
 		if (GUI::combo("Thread Priority", &priority, priorities, 5))
 		{
 			Mod::get()->setSavedValue<int>("general/priority", priority);
 			Common::setPriority();
 		}
+
+		GUI::tooltip("Changes the priority of the game over other processes.");
 	});
 	generalWindow.position = {50, 50};
 	generalWindow.size.y = 250;
@@ -209,9 +215,9 @@ void initGUI()
 		GUI::modalPopup(
 			"Show Hitboxes Settings",
 			[] {
-				float borderSize = Settings::get<float>("level/show_hitbox/size", 0.25f);
+				float borderSize = Settings::get<float>("level/show_hitbox/size", 1.0f);
 				int borderAlpha = Settings::get<int>("level/show_hitbox/border_alpha", 255);
-				int fillAlpha = Settings::get<int>("level/show_hitbox/fill_alpha", 50);
+				int fillAlpha = Settings::get<int>("level/show_hitbox/fill_alpha", 1);
 
 				int maxQueue = Settings::get<int>("level/show_hitbox/max_queue", 240);
 
@@ -234,6 +240,8 @@ void initGUI()
 
 		GUI::checkbox("Auto Deafen", "level/auto_deafen/enabled");
 
+		GUI::tooltip("Deafens you on discord whenever you get to a certain percent.\nTo use auto deafen, set a mute keybind in discord with ALT + the key you want to use");
+
 		GUI::arrowButton("Auto Deafen Settings");
 		GUI::modalPopup(
 			"Auto Deafen Settings",
@@ -250,25 +258,33 @@ void initGUI()
 			ImGuiWindowFlags_AlwaysAutoResize);
 
 		GUI::checkbox("Replay Last Checkpoint", "level/replay_checkpoint");
+		GUI::tooltip("Respawns you at the last checkpoint when you restart after completing the level.");
 
 		GUI::checkbox("Auto Safe Mode", "level/safe_mode/auto");
+		GUI::tooltip("Automatically toggles safe mode when you are cheating.");
 
 		if (GUI::checkbox("Safe Mode", "level/safe_mode/enabled"))
 			SafeMode::updateState();
 		GUI::checkbox("Safe Mode Endscreen Label", "level/safe_mode/endscreen_enabled", true);
+		GUI::tooltip("Shows a label on the endscreen when safe mode is active.");
 
 		GUI::checkbox("Endscreen Info", "level/endlevellayerinfo/enabled", true);
+		GUI::tooltip("Shows run info such as accuracy and deaths on the endscreen.");
 
 		GUI::checkbox("Hide Pause Button", "general/hide_pause/button");
 		GUI::checkbox("Hide Pause Menu", "general/hide_pause/menu");
 
 		GUI::checkbox("No Shaders", "level/no_shaders");
+		GUI::tooltip("Disables shaders from rendering.");
+
 		GUI::checkbox("Instant Complete", "level/instant_complete");
-		if (ImGui::IsItemHovered())
-			ImGui::SetTooltip("Using Instant Complete can and will ban you from the game! Use with caution.");
+		GUI::tooltip("Completes any level when you play it.\nUsing Instant Complete can and will ban you from the leaderboards! Use with caution.");
 
 		GUI::checkbox("Layout Mode", "level/layout_mode");
+		GUI::tooltip("Removes any decoration or non gameplay related trigger from the level.");
+
 		GUI::checkbox("Hitbox Multiplier", "level/hitbox_multiplier");
+		GUI::tooltip("Changes the hitbox size of slopes, hazards, and players.");
 
 		GUI::arrowButton("Hitbox Multiplier Settings");
 		GUI::modalPopup(
@@ -287,19 +303,19 @@ void initGUI()
 					Settings::get<float>("level/hitbox_multiplier/scale_player/y", 1.f)
 				};
 
-				if(GUI::inputFloat2("Slope Scale", scaleSlopes, 0.1f, 4.f, 0.1f, 4.f))
+				if (GUI::inputFloat2("Slope Scale", scaleSlopes, 0.1f, 4.f, 0.1f, 4.f))
 				{
 					Mod::get()->setSavedValue<float>("level/hitbox_multiplier/scale_slopes/x", scaleSlopes[0]);
 					Mod::get()->setSavedValue<float>("level/hitbox_multiplier/scale_slopes/y", scaleSlopes[1]);
 				}
 
-				if(GUI::inputFloat2("Hazard Scale", scaleHazards, 0.1f, 4.f, 0.1f, 4.f))
+				if (GUI::inputFloat2("Hazard Scale", scaleHazards, 0.1f, 4.f, 0.1f, 4.f))
 				{
 					Mod::get()->setSavedValue<float>("level/hitbox_multiplier/scale_hazards/x", scaleHazards[0]);
 					Mod::get()->setSavedValue<float>("level/hitbox_multiplier/scale_hazards/y", scaleHazards[1]);
 				}
 
-				if(GUI::inputFloat2("Player Scale", scalePlayer, 0.1f, 4.f, 0.1f, 4.f))
+				if (GUI::inputFloat2("Player Scale", scalePlayer, 0.1f, 4.f, 0.1f, 4.f))
 				{
 					Mod::get()->setSavedValue<float>("level/hitbox_multiplier/scale_player/x", scalePlayer[0]);
 					Mod::get()->setSavedValue<float>("level/hitbox_multiplier/scale_player/y", scalePlayer[1]);
@@ -321,16 +337,31 @@ void initGUI()
 		if (GUI::dragInt("Window Snap", &snap, 0))
 			Mod::get()->setSavedValue<int>("menu/window/snap", snap);
 
+		GUI::tooltip("Makes window position snap to a grid");
+
 		if (GUI::dragInt("Size Snap", &snapSize, 0))
 			Mod::get()->setSavedValue<int>("menu/window/size_snap", snapSize);
+
+		GUI::tooltip("Makes window size snap to a grid");
 
 		if (GUI::dragFloat("Transition Duration", &transitionDuration, 0))
 			Mod::get()->setSavedValue<float>("menu/transition_duration", transitionDuration);
 
+		GUI::tooltip("Duration of the window transition animation");
+
 		if (GUI::inputFloat("Window Opacity", &windowOpacity, 0.f, 1.f))
 			Mod::get()->setSavedValue<float>("menu/window/opacity", windowOpacity);
 
+		GUI::tooltip("Opacity of the window background");
+
+		GUI::inputFloat("UI Scale", "menu/ui_scale", 1.f, 0.1f, 2.f);
+		GUI::tooltip("Changes how big the menu will appear");
+
+		GUI::checkbox("Title Gradient", "menu/title_gradient/enabled", true);
+		GUI::tooltip("Makes the titlebar color a gradient instead of a solid color");
+
 		GUI::checkbox("Rainbow Menu", "menu/window/rainbow/enabled");
+		GUI::tooltip("Makes the titlebar color cycle over time");
 
 		GUI::arrowButton("Rainbow Menu Settings");
 		GUI::modalPopup(
@@ -352,11 +383,21 @@ void initGUI()
 				GUI::inputInt("Blur Steps", "menu/blur/steps", 10, 5, 20);
 			};
 
+		GUI::checkbox("Window Shadow", "menu/box_shadow/enabled", true);
+		GUI::tooltip("Makes windows cast a box shadow underneath itself.");
 
-		GUI::checkbox("Blur Background", "menu/blur/enabled");
+		GUI::arrowButton("Window Shadow Settings");
+		GUI::modalPopup(
+			"Window Shadow Settings",
+			[] {
+				GUI::inputFloat("Shadow Size", "menu/box_shadow/size", 24.f, 12.f, 100.f);
+			},
+			ImGuiWindowFlags_AlwaysAutoResize);
+
+		if(GUI::checkbox("Blur Background", "menu/blur/enabled"))
+			Blur::compileBlurShader();
 		
-		if(ImGui::IsItemHovered())
-			ImGui::SetTooltip("WARNING: this option is very performance heavy!");
+		GUI::tooltip("Applies a blur effect to the window background.\nWARNING: this option is very performance heavy!");
 		
 		GUI::arrowButton("Blur Settings##0");
 		GUI::modalPopup(
@@ -364,10 +405,10 @@ void initGUI()
 			blurSettings,
 			ImGuiWindowFlags_AlwaysAutoResize);
 
-		GUI::checkbox("Blur GD", "menu/blur/gd");
+		if(GUI::checkbox("Blur GD", "menu/blur/gd"))
+			Blur::compileBlurShader();
 
-		if(ImGui::IsItemHovered())
-			ImGui::SetTooltip("WARNING: this option is very performance heavy!");
+		GUI::tooltip("Applies a blur effect to the game while the menu is open.\nWARNING: this option is very performance heavy!");
 
 		GUI::arrowButton("Blur Settings##1");
 		GUI::modalPopup(
@@ -388,6 +429,8 @@ void initGUI()
 			Mod::get()->setSavedValue<float>("menu/window/color/g", windowColor[1]);
 			Mod::get()->setSavedValue<float>("menu/window/color/b", windowColor[2]);
 		}
+
+		GUI::tooltip("Changes the color of the window titlebar");
 
 		int togglekey = Settings::get<int>("menu/togglekey", ImGuiKey_Tab);
 		if (GUI::hotkey("Toggle Menu", &togglekey))

@@ -5,8 +5,9 @@
 
 #include "AudioRecord.h"
 #include "Macrobot.h"
-#include <Geode/cocos/platform/CCGL.h>
+#include "portable-file-dialogs.h"
 
+#include <Geode/cocos/platform/CCGL.h>
 #include <Geode/binding/GJGameLevel.hpp>
 #include <Geode/modify/PlayLayer.hpp>
 #include <Geode/modify/ShaderLayer.hpp>
@@ -21,9 +22,9 @@ uintptr_t addr = 0;
 
 void glViewportHook(GLint a, GLint b, GLsizei c, GLsizei d)
 {
-	if(visiting && recorder.m_recording && inShader)
+	if (visiting && recorder.m_recording && inShader)
 	{
-		if(c != 2608 && d != 2608)
+		if (c != 2608 && d != 2608)
 		{
 			c = Settings::get<int>("recorder/resolution/x", 1920);
 			d = Settings::get<int>("recorder/resolution/y", 1080);
@@ -60,7 +61,6 @@ class $modify(PlayLayer)
 	bool init(GJGameLevel* level, bool unk1, bool unk2)
 	{
 		bool res = PlayLayer::init(level, unk1, unk2);
-		endLevelLayer = nullptr;
 		return res;
 	}
 
@@ -74,15 +74,6 @@ class $modify(PlayLayer)
 	{
 		levelDone = false;
 		PlayLayer::resetLevel();
-	}
-};
-
-class $modify(EndLevelLayer)
-{
-	void showLayer(bool unk)
-	{
-		endLevelLayer = this;
-		return EndLevelLayer::showLayer(unk);
 	}
 };
 
@@ -106,20 +97,27 @@ Recorder::Recorder()
 void Recorder::start_audio()
 {
 	std::string level_id = PlayLayer::get()->m_level->m_levelName.c_str() + ("_" + std::to_string(PlayLayer::get()->m_level->m_levelID.value()));
-	auto path = Mod::get()->getSaveDir() / "renders" / level_id / "rendered_video.mp4";
+	ghc::filesystem::path path = renderPath;
 	bool hasVideo = ghc::filesystem::exists(path);
 
-	if(!hasVideo)
+	if (!hasVideo)
 	{
-		FLAlertLayer::create("Error", ("The render for the level has not been found!\n" + string::wideToUtf8(path.wstring())).c_str(), "Ok")->show();
+		Common::showWithPriority(FLAlertLayer::create("Error", ("The render for the level has not been found!\n" + string::wideToUtf8(path.wstring())).c_str(), "Ok"));
 		return;
 	}
 
 	levelDone = false;
-	m_after_end_duration = Settings::get<float>("recorder/after_end", 5.f);
+	m_after_end_duration = Settings::get<float>("recorder/after_end", 3.4f);
 	m_after_end_extra_time = 0.f;
 
 	recorder.m_recording_audio = true;
+	
+	if (PlayLayer::get()->getChildByID("EndLevelLayer"))
+		PlayLayer::get()->getChildByID("EndLevelLayer")->removeFromParent();
+	
+	PlayLayer::get()->stopAllActions();
+	MBO(float, PlayLayer::get(), 10960) = 0;//startgamedelayed
+	PlayLayer::get()->startGame();
 	PlayLayer::get()->resetLevelFromStart();
 	recorder.m_recording = false;
 }
@@ -138,17 +136,30 @@ void Recorder::start()
 	m_height = resolution[1];
 	m_fps = framerate;
 
-	std::string codec = Settings::get<std::string>("recorder/codec", "h264_nvenc");
+	std::string codec = Settings::get<std::string>("recorder/codec", "");
 	if (codec != "")
 		m_codec = codec;
 
 	std::string extraArgs =
-		Settings::get<std::string>("recorder/extraArgs", "-hwaccel cuda -hwaccel_output_format cuda");
+		Settings::get<std::string>("recorder/extraArgs", "");
 
 	if (extraArgs != "")
 		m_extra_args = extraArgs;
-	// if (hacks.extraArgsAfter != "")
-	m_extra_args_after = ""; // hacks.extraArgsAfter;
+
+	std::string extraArgsAfter =
+		Settings::get<std::string>("recorder/extraArgsAfter", "-pix_fmt rgb0 -qp 16 -rc-lookahead 16 -preset slow");
+
+	m_extra_args_after = "";
+	if (extraArgsAfter != "")
+		m_extra_args_after = extraArgsAfter;
+
+	std::string extraArgsVideo =
+		Settings::get<std::string>("recorder/extraArgsVideo", "colorspace=all=bt709:iall=bt470bg:fast=1");
+
+	m_extra_args_video = "";
+	if (extraArgsVideo != "")
+		m_extra_args_video = extraArgsVideo;
+	
 	m_recording = true;
 	m_frame_has_data = false;
 	m_current_frame.resize(m_width * m_height * 3, 0);
@@ -158,10 +169,10 @@ void Recorder::start()
 	int bitrate = Settings::get<int>("recorder/bitrate", 30);
 	m_bitrate = std::to_string(bitrate) + "M";
 
-	float afterEnd = Settings::get<float>("recorder/after_end", 5.f);
+	float afterEnd = Settings::get<float>("recorder/after_end", 3.4f);
 
 	m_after_end_extra_time = 0.f;
-	m_after_end_duration = afterEnd; // hacks.afterEndDuration;
+	m_after_end_duration = afterEnd;
 	m_renderer.m_width = m_width;
 	m_renderer.m_height = m_height;
 	m_renderer.begin();
@@ -169,26 +180,22 @@ void Recorder::start()
 
 	m_song_start_offset = PlayLayer::get()->m_levelSettings->m_songOffset;
 
-	PlayLayer::get()->resetLevel();
+	if (PlayLayer::get()->getChildByID("EndLevelLayer"))
+		PlayLayer::get()->getChildByID("EndLevelLayer")->removeFromParent();
+	
+	PlayLayer::get()->stopAllActions();
+	MBO(float, PlayLayer::get(), 10960) = 0;//startgamedelayed
+	PlayLayer::get()->startGame();
+	PlayLayer::get()->resetLevelFromStart();
 
-	std::string level_id = PlayLayer::get()->m_level->m_levelName.c_str() + ("_" + std::to_string(PlayLayer::get()->m_level->m_levelID.value()));
 	auto bg_volume = 1;
 	auto sfx_volume = 1;
 
 	auto song_offset = m_song_start_offset;
 
-	if (!ghc::filesystem::is_directory(Mod::get()->getSaveDir() / "renders" / level_id) ||
-		!ghc::filesystem::exists(Mod::get()->getSaveDir() / "renders" / level_id))
-	{
-		ghc::filesystem::create_directory(Mod::get()->getSaveDir() / "renders" / level_id);
-	}
-
-	if (m_recording_audio)
-		return;
-
-	std::thread([&, bg_volume, sfx_volume, song_offset, level_id]()
+	std::thread([&, bg_volume, sfx_volume, song_offset]()
 				{
-		auto renderedVideo = (Mod::get()->getSaveDir() / "renders" / level_id / "rendered_video.mp4");
+		ghc::filesystem::path renderedVideo = renderPath;
 
 		{
 			std::stringstream stream;
@@ -209,7 +216,10 @@ void Recorder::start()
 			else
 				stream << "-pix_fmt yuv420p ";
 
-			stream << "-vf \"vflip\" -an " << renderedVideo; // i hope just putting it in "" escapes it
+			stream << "-vf \"vflip";
+			if(!m_extra_args_video.empty())
+				stream << "," << m_extra_args_video;
+			stream << "\" -an " << renderedVideo; // i hope just putting it in "" escapes it
 			auto process = subprocess::Popen(stream.str());
 			while (m_recording || m_frame_has_data)
 			{
@@ -239,7 +249,6 @@ void Recorder::start()
 
 void Recorder::stop()
 {
-	FLAlertLayer::create("Info", "Macro rendererd successfully!", "Ok")->show();
 	m_renderer.end();
 	m_recording = false;
 }
@@ -310,20 +319,12 @@ void Recorder::capture_frame()
 
 void Recorder::stop_audio()
 {
-	FLAlertLayer::create("Info", "Sound recorded successfully!", "Ok")->show();
+	Common::showWithPriority(FLAlertLayer::create("Info", "Macro and sound rendererd successfully!", "Ok"));
 	AudioRecord::stop();
 	m_recording_audio = false;
 
-	GJGameLevel *level =
-		GameManager::get()
-			->getPlayLayer()
-			->m_level; // MBO(gd::GJGameLevel*, PlayLayer::get(), 1504); // found in playlayer_init
-
-	std::string level_id = PlayLayer::get()->m_level->m_levelName.c_str() + ("_" + std::to_string(PlayLayer::get()->m_level->m_levelID.value()));
-
-	ghc::filesystem::path video_path = Mod::get()->getSaveDir() / "renders" / level_id / "rendered_video.mp4";
-
-	ghc::filesystem::path temp_path = Mod::get()->getSaveDir() / "renders" / level_id / "music.mp4";
+	ghc::filesystem::path video_path = renderPath;
+	ghc::filesystem::path temp_path = video_path.parent_path() / "music.mp4";
 
 	std::stringstream ss;
 
@@ -375,10 +376,7 @@ void Recorder::handle_recording(GJBaseGameLayer *play_layer, float dt)
 			m_after_end_extra_time += dt;
 			m_finished_level = true;
 		}
-
-		/* if (!play_layer->m_hasCompletedLevel)
-			tfx = play_layer->timeForXPos(play_layer->m_pPlayer1->getPositionX());
-		else */
+		
 		tfx += dt;
 		float timewarp = MBO(float, PlayLayer::get(), 724);
 
@@ -388,102 +386,98 @@ void Recorder::handle_recording(GJBaseGameLayer *play_layer, float dt)
 		{
 			m_extra_t = time - frame_dt;
 			m_last_frame_t = tfx;
+
+			float time = (static_cast<float>(play_layer->m_gameState.m_unk1f8) / Common::getTPS()) * 1000.f;
+			time += PlayLayer::get()->m_levelSettings->m_songOffset * 1000.f;
+
+			FMOD::Channel* audioChannel;
+
+			for(int i = 0; i < 2; i++)
+			{
+				FMODAudioEngine::sharedEngine()->m_system->getChannel(126 + i, &audioChannel);
+				if (audioChannel)
+				{
+					uint32_t channelTime = 0;
+					audioChannel->getPosition(&channelTime, FMOD_TIMEUNIT_MS);
+
+					if(channelTime <= 0)
+						continue;
+
+					if(channelTime - time > 0.15f)
+						audioChannel->setPosition(time, FMOD_TIMEUNIT_MS);
+				}
+			}
+
 			capture_frame();
 		}
 	}
 	else
 	{
 		stop();
+
+		if(Settings::get<bool>("recorder/record_audio", false))
+			start_audio();
+		else
+			Common::showWithPriority(FLAlertLayer::create("Info", "Macro rendererd successfully!", "Ok"));
 	}
 }
 
 void Record::renderWindow()
 {
-	bool disabled = !PlayLayer::get() || levelDone || Record::recorder.m_recording_audio || Record::recorder.m_recording || Macrobot::macro.inputs.size() <= 0 || Macrobot::playerMode != 0;
-	if (disabled)
-		ImGui::BeginDisabled();
-
-	if (GUI::button("Start Recording"))
+	if(recorder.m_recording || recorder.m_recording_audio)
 	{
-		if (!ghc::filesystem::exists("ffmpeg.exe"))
+		if (GUI::button("Stop Recording"))
 		{
-			auto process = subprocess::Popen(string::wideToUtf8((Mod::get()->getResourcesDir() / "get_ffmpeg.exe").wstring()));
-			try
-			{
-				process.close();
-			}
-			catch (const std::exception &e)
-			{
-				std::cout << e.what() << '\n';
-			}
+			if(recorder.m_recording)
+				recorder.stop();
+			else if(recorder.m_recording_audio)
+				recorder.stop_audio();
 		}
-		if (ghc::filesystem::exists("ffmpeg.exe"))
-			Record::recorder.start();
-		else
-			FLAlertLayer::create("Error", "FFmpeg not found", "Ok")->show();
 	}
-
-	if(GUI::shouldRender() && disabled && ImGui::IsItemHovered())
-		ImGui::SetTooltip("You need to be playing a macro to record");
-
-	if (disabled)
-		ImGui::EndDisabled();
-
-	disabled = !PlayLayer::get() || levelDone || Record::recorder.m_recording_audio || !Record::recorder.m_recording || Macrobot::macro.inputs.size() <= 0 || Macrobot::playerMode != 0;
-	if (disabled)
-		ImGui::BeginDisabled();
-
-	if (GUI::button("Stop Recording"))
-		Record::recorder.stop();
-
-	if (disabled)
-		ImGui::EndDisabled();
-
-	disabled = !PlayLayer::get() || levelDone || Record::recorder.m_recording || Record::recorder.m_recording_audio || Macrobot::macro.inputs.size() <= 0 || Macrobot::playerMode != 0;
-
-	if (disabled)
-		ImGui::BeginDisabled();
-
-	if (GUI::button("Start Audio"))
+	else
 	{
-		if (!ghc::filesystem::exists("ffmpeg.exe"))
+		bool disabled = !PlayLayer::get() || Macrobot::macro.inputs.size() <= 0 || Macrobot::playerMode != 0;
+
+		if(disabled)
+			ImGui::BeginDisabled();
+
+		if (GUI::button("Start Recording"))
 		{
-			auto process = subprocess::Popen(string::wideToUtf8((Mod::get()->getResourcesDir() / "get_ffmpeg.exe").wstring()));
-			try
+			if (!ghc::filesystem::exists("ffmpeg.exe"))
 			{
-				process.close();
+				auto process = subprocess::Popen(string::wideToUtf8((Mod::get()->getResourcesDir() / "get_ffmpeg.exe").wstring()));
+				try
+				{
+					process.close();
+				}
+				catch (const std::exception &e)
+				{
+					std::cout << e.what() << '\n';
+				}
 			}
-			catch (const std::exception &e)
+
+			if (ghc::filesystem::exists("ffmpeg.exe"))
 			{
-				std::cout << e.what() << '\n';
+				renderPath = pfd::save_file("Save Render", string::wideToUtf8((Mod::get()->getSaveDir() / "renders").wstring()), { "Video Files", "*.mp4"}).result();
+				
+				if(ghc::filesystem::path(renderPath).extension().string().empty())
+					renderPath.append(".mp4");
+
+				if(!renderPath.empty())
+					Record::recorder.start();
 			}
+			else
+				Common::showWithPriority(FLAlertLayer::create("Error", "FFmpeg not found", "Ok"));
 		}
 
-		if (ghc::filesystem::exists("ffmpeg.exe"))
-			recorder.start_audio();
-		else
-			FLAlertLayer::create("Error", "FFmpeg not found", "Ok")->show();
+		if(disabled)
+		{
+			GUI::tooltip("You need to be playing a macro to record!");
+			ImGui::EndDisabled();
+		}
 	}
 
-	if(GUI::shouldRender() && disabled && ImGui::IsItemHovered())
-		ImGui::SetTooltip("You need to be playing a macro to record");
-
-	if (disabled)
-		ImGui::EndDisabled();
-
-	disabled = !PlayLayer::get() || levelDone || Record::recorder.m_recording || !Record::recorder.m_recording_audio || Macrobot::macro.inputs.size() <= 0 || Macrobot::playerMode != 0;
-
-	if (disabled)
-		ImGui::BeginDisabled();
-
-	if (GUI::button("Stop Audio") && Record::recorder.m_recording_audio)
-	{
-		recorder.m_recording_audio = false;
-		AudioRecord::stop();
-	}
-
-	if (disabled)
-		ImGui::EndDisabled();
+	GUI::checkbox("Record audio", "recorder/record_audio");
 
 	int resolution[2];
 	resolution[0] = Settings::get<int>("recorder/resolution/x", 1920);
@@ -502,32 +496,39 @@ void Record::renderWindow()
 	if (ImGui::IsItemDeactivatedAfterEdit())
 		Mod::get()->setSavedValue<int>("recorder/bitrate", bitrate);
 
-	std::string codec = Settings::get<std::string>("recorder/codec", "");
-
-	if (GUI::inputText("Codec", &codec))
-		Mod::get()->setSavedValue<std::string>("recorder/codec", codec);
-
-	std::string extraArgs = Settings::get<std::string>("recorder/extraArgs", "");
-	if (GUI::inputText("Extra Args", &extraArgs))
-		Mod::get()->setSavedValue<std::string>("recorder/extraArgs", extraArgs);
-
 	int framerate = Settings::get<int>("recorder/fps", 60);
 	GUI::inputInt("Framerate", &framerate);
 
 	if (ImGui::IsItemDeactivatedAfterEdit())
 		Mod::get()->setSavedValue<int>("recorder/fps", framerate);
 
-	float afterEnd = Settings::get<float>("recorder/after_end", 5.f);
-	GUI::inputFloat("Show Endscreen For", &afterEnd);
+	float afterEnd = Settings::get<float>("recorder/after_end", 3.4f);
+	GUI::inputFloat("Show End For", &afterEnd);
 
 	if (ImGui::IsItemDeactivatedAfterEdit())
 		Mod::get()->setSavedValue<float>("recorder/after_end", afterEnd);
+
+	if (GUI::button("CPU"))
+	{
+		Mod::get()->setSavedValue<std::string>("recorder/codec", "");
+		Mod::get()->setSavedValue<std::string>("recorder/extraArgs", "");
+		Mod::get()->setSavedValue<std::string>("recorder/extraArgsAfter", "-pix_fmt rgb0 -qp 16 -rc-lookahead 16 -preset slow");
+		Mod::get()->setSavedValue<std::string>("recorder/extraArgsVideo", "colorspace=all=bt709:iall=bt470bg:fast=1");
+	}
+
+	GUI::tooltip("Applies a preset for optimal rendering with the CPU");
+	
+	GUI::sameLine();
 
 	if (GUI::button("NVIDIA"))
 	{
 		Mod::get()->setSavedValue<std::string>("recorder/codec", "h264_nvenc");
 		Mod::get()->setSavedValue<std::string>("recorder/extraArgs", "-hwaccel cuda -hwaccel_output_format cuda");
+		Mod::get()->setSavedValue<std::string>("recorder/extraArgsAfter", "-pix_fmt rgb0 -qp 16 -rc-lookahead 16 -preset slow");
+		Mod::get()->setSavedValue<std::string>("recorder/extraArgsVideo", "colorspace=all=bt709:iall=bt470bg:fast=1");
 	}
+
+	GUI::tooltip("Applies a preset for optimal rendering with NVIDIA GPUs");
 
 	GUI::sameLine();
 
@@ -535,7 +536,35 @@ void Record::renderWindow()
 	{
 		Mod::get()->setSavedValue<std::string>("recorder/codec", "h264_amf");
 		Mod::get()->setSavedValue<std::string>("recorder/extraArgs", "");
+		Mod::get()->setSavedValue<std::string>("recorder/extraArgsAfter", "-pix_fmt rgb0 -qp 16 -rc-lookahead 16 -preset slow");
+		Mod::get()->setSavedValue<std::string>("recorder/extraArgsVideo", "colorspace=all=bt709:iall=bt470bg:fast=1");
 	}
+
+	GUI::tooltip("Applies a preset for optimal rendering with AMD GPUs");
+
+	if(GUI::button("Advanced Settings"))
+		ImGui::OpenPopup("Advanced Settings##popup");
+
+	GUI::tooltip("It is reccomended to use presets and not change these settings unless you know what you're doing!");
+
+	GUI::modalPopup("Advanced Settings##popup", []{
+		std::string codec = Settings::get<std::string>("recorder/codec", "");
+
+		if (GUI::inputText("Codec", &codec))
+			Mod::get()->setSavedValue<std::string>("recorder/codec", codec);
+
+		std::string extraArgs = Settings::get<std::string>("recorder/extraArgs", "");
+		if (GUI::inputText("First Args", &extraArgs, 200))
+			Mod::get()->setSavedValue<std::string>("recorder/extraArgs", extraArgs);
+
+		std::string extraArgsAfter = Settings::get<std::string>("recorder/extraArgsAfter", "-pix_fmt rgb0 -qp 16 -rc-lookahead 16 -preset slow");
+		if (GUI::inputText("Second Args", &extraArgsAfter, 200))
+			Mod::get()->setSavedValue<std::string>("recorder/extraArgsAfter", extraArgsAfter);
+
+		std::string extraArgsVideo = Settings::get<std::string>("recorder/extraArgsVideo", "colorspace=all=bt709:iall=bt470bg:fast=1");
+		if (GUI::inputText("Video Args", &extraArgsVideo, 200))
+			Mod::get()->setSavedValue<std::string>("recorder/extraArgsVideo", extraArgsVideo);
+	});
 
 	GUI::marker("[INFO]",
 				"Press start recording to get a smooth recording of the level. "
