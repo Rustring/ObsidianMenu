@@ -8,7 +8,7 @@
 
 My very own modificaion of GDMegaOverlay. Currently supports Geometry Dash 2.204
 
-![Menu screen](/img/screen.png)
+![Menu screen](/img/screenshot.png)
 
 ## ATENTION!!
 
