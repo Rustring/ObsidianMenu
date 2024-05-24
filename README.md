@@ -10,6 +10,8 @@ My very own modificaion of GDMegaOverlay. Currently supports Geometry Dash 2.204
 
 ![Menu screen](/img/screenshot.png)
 
+## New Version is on the way!!
+
 ## ATENTION!!
 
 This is **NOT** meant to rival GD Mega Overlay. it is just a **FUN** project for me to work on, Do **NOT** beg for updates or for this to sync with GDMO's updates, if you want GDMO support use maxnu's project, I will **NOT** fix GDMO's issues leave them to the GDMO devs to fix or say them to fix.
