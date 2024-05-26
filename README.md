@@ -41,6 +41,7 @@ You can use the overlay by pressing **Tab**.
 ## Features
 
 * Basic hacks
+* A sick and modern UI (coming soon)
 * Startpos Switcher
 * Macro Bot
 * Internal Recorder
