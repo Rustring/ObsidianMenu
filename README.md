@@ -6,7 +6,7 @@
 
 ## Description
 
-My very own modificaion of GDMegaOverlay. Currently supports Geometry Dash 2.204
+My very own modificaion of GDMegaOverlay. Currently supports Geometry Dash 2.204 (2.206 Is **NOT** supported right now, you need to use Geode with 2.204 for this to work)
 
 ![Menu screen](/img/screen.png)
 
