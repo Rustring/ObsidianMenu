@@ -10,7 +10,7 @@ My very own modificaion of GDMegaOverlay. Currently supports Geometry Dash 2.204
 
 ![Menu screen](/img/screen.png)
 
-## New Version is on the way!!
+## Sorry you need to wait for Geode to be ported to 2.206 for this to then update
 
 ## ATENTION!!
 
