@@ -4,11 +4,11 @@
 
 <div align="left">
 
-## Archiving untill GDMO ports to 2.206
+## 1.2.0 will Be the last version it will ONLY work on Geode 2.204 
 
 ## Description
 
-My very own modificaion of GDMegaOverlay. Currently supports Geometry Dash 2.204 (2.206 Is **NOT** supported right now, you need to use Geode with 2.204 for this to work)
+My very own modificaion of GDMegaOverlay. Currently supports Geometry Dash 2.204
 
 ![Menu screen](/img/screen.png)
 
