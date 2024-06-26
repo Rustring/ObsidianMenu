@@ -4,7 +4,7 @@
 
 <div align="left">
 
-## 1.2.0 will Be the last version it will ONLY work on Geode 2.204 
+## NVM 1.2.0 is never coming, project's dead goodbye
 
 ## Description
 
@@ -41,7 +41,7 @@ You can use the overlay by pressing **Tab**.
 ## Features
 
 * Basic hacks
-* A sick and modern UI (coming soon)
+* A sick and modern UI (never coming)
 * Startpos Switcher
 * Macro Bot
 * Internal Recorder
