@@ -3,12 +3,12 @@
 	"gd": {
 		"win": "2.204"
 	},
-	"version": "v2.11.1",
-	"id": "maxnu.gd_mega_overlay",
-	"name": "GD Mega Overlay",
-	"developers": ["maxnu", "SpaghettDev"],
+	"version": "v1.2.0",
+	"id": "rustring.gd_mod_hack",
+	"name": "GD Mod Hack",
+	"developers": ["Rustring"],
 	"description": "Free, feature-rich, gui-integrated geometry dash mod menu",
-	"repository": "https://github.com/maxnut/GDMegaOverlay",
+	"repository": "https://github.com/Rustring/GDModHack",
 	"resources": {
 		"files": [
 			"res/hacks/*.json",
