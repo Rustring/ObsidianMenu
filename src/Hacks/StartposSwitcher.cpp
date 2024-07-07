@@ -133,14 +133,19 @@ void StartposSwitcher::change(bool right)
 	else if (index >= static_cast<int>(startposObjects.size()))
 		index = -1;
 
+	loadStartPos();
+}
+
+void StartposSwitcher::loadStartPos()
+{
 	StartPosObject* startPosObject = index == -1 ? nullptr : startposObjects[index];
+
+	if (!startPosObject && index != -1)
+		return;
 
 	// delete the startposcheckpoint (see playlayer_resetlevel line 148 in ida)
 	int* startPosCheckpoint = (int*)PlayLayer::get() + 2949;
 	*startPosCheckpoint = 0;
-
-	if (!startPosObject && index != -1)
-		return;
 
 	PlayLayer::get()->setStartPosObject(startPosObject);
 

@@ -1,8 +1,8 @@
 #include "Clickpacks.h"
 #include "../Common.h"
 
-
 #include "../GUI/GUI.h"
+#include "../GUI/DirectoryCombo.h"
 #include "../Settings.hpp"
 #include <portable-file-dialogs.h>
 #include <filesystem>
@@ -69,31 +69,41 @@ void Clickpacks::init()
 		if (clickpackOpt.has_value())
 			currentClickpack = clickpackOpt.value();
 	}
+
+	std::string clickPath2 = Settings::get<std::string>("clickpacks/path_2");
+
+	if (clickPath2 != "")
+	{
+		auto clickpackOpt = Clickpack::fromPath(clickPath2);
+		if (clickpackOpt.has_value())
+			currentClickpackP2 = clickpackOpt.value();
+	}
 }
 
 void Clickpacks::drawGUI()
 {
 	GUI::modalPopup("Clickpacks", [] {
-		if (GUI::shouldRender())
-			ImGui::Text(("Current pack: " + currentClickpack.name).c_str());
 
-		if (GUI::button("Select clickpack"))
+		static GUI::DirectoryCombo clickpackP1Combo("Clickpack P1", Mod::get()->getSaveDir() / "clickpacks", "clickpacks/path");
+		
+		if(clickpackP1Combo.draw())
 		{
-			std::string clickPath = Settings::get<std::string>("clickpacks/path");
+			auto res = Clickpack::fromPath(clickpackP1Combo.getSelectedFilePath());
+			if (res.has_value())
+				currentClickpack = res.value();
+			else
+				Common::showWithPriority(FLAlertLayer::create("Error", "The folder is not a valid clickpack!", "Ok"));
+		}
 
-			const auto result = pfd::select_folder("Choose a folder", (Mod::get()->getSaveDir() / "clickpacks").string()).result();
-
-			if (!result.empty())
-			{
-				auto res = Clickpack::fromPath(result);
-				if (res.has_value())
-				{
-					currentClickpack = res.value();
-					Mod::get()->setSavedValue<std::string>("clickpacks/path", result);
-				}
-				else
-					Common::showWithPriority(FLAlertLayer::create("Error", "The folder is not a valid clickpack!", "Ok"));
-			}
+		static GUI::DirectoryCombo clickpackP2Combo("Clickpack P2", Mod::get()->getSaveDir() / "clickpacks", "clickpacks/path_2");
+		
+		if(clickpackP2Combo.draw())
+		{
+			auto res = Clickpack::fromPath(clickpackP2Combo.getSelectedFilePath());
+			if (res.has_value())
+				currentClickpackP2 = res.value();
+			else
+				Common::showWithPriority(FLAlertLayer::create("Error", "The folder is not a valid clickpack!", "Ok"));
 		}
 
 		float clickVolume = Settings::get<float>("clickpacks/click/volume", 1.f);

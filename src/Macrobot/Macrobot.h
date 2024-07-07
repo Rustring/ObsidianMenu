@@ -31,8 +31,6 @@ namespace Macrobot
 		double xVel;
 		float xPos;
 		float yPos;
-		float nodeXPos;
-		float nodeYPos;
 		float rotation;
 		float rotationRate;
 		GameObject* lastSnappedTo = nullptr;
@@ -40,6 +38,7 @@ namespace Macrobot
 
 		bool isOnSlope;
 		bool wasOnSlope;
+		bool isOnGround;
 
 		std::vector<float> randomProperties;
 
@@ -50,6 +49,7 @@ namespace Macrobot
 	struct CheckpointData
 	{
 		uint32_t frame;
+		int randomSeed;
 		MPlayerCheckpoint p1;
 		MPlayerCheckpoint p2;
 	};
@@ -86,8 +86,6 @@ namespace Macrobot
 				c.checkpoint.yVel = obj["correction"]["yVel"];
 				c.checkpoint.xPos = obj["correction"]["xPos"];
 				c.checkpoint.yPos = obj["correction"]["yPos"];
-				c.checkpoint.nodeXPos = obj["correction"]["nodeXPos"];
-				c.checkpoint.nodeYPos = obj["correction"]["nodeYPos"];
 				c.checkpoint.rotation = obj["correction"]["rotation"];
 				c.checkpoint.rotationRate = obj["correction"]["rotationRate"];
 				correction = c;
@@ -107,8 +105,6 @@ namespace Macrobot
 				obj["correction"]["yVel"] = c.checkpoint.yVel;
 				obj["correction"]["xPos"] = c.checkpoint.xPos;
 				obj["correction"]["yPos"] = c.checkpoint.yPos;
-				obj["correction"]["nodeXPos"] = c.checkpoint.nodeXPos;
-				obj["correction"]["nodeYPos"] = c.checkpoint.nodeYPos;
 				obj["correction"]["rotation"] = c.checkpoint.rotation;
 				obj["correction"]["rotationRate"] = c.checkpoint.rotationRate;
 			}
@@ -166,4 +162,6 @@ namespace Macrobot
 
 	void drawWindow();
 	void drawMacroTable();
+
+	bool clickBetweenFramesCheck();
 };

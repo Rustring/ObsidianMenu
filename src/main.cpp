@@ -7,6 +7,7 @@ using namespace geode::prelude;
 #include "ConstData.h"
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include <imgui-cocos.hpp>
+#include <misc/cpp/imgui_stdlib.h>
 #include <nlohmann/json.hpp>
 #include <filesystem>
 #include <fstream>
@@ -24,6 +25,7 @@ using namespace geode::prelude;
 #include "Macrobot/Record.h"
 #include "Settings.hpp"
 #include "GUI/Blur.h"
+#include "GUI/DirectoryCombo.h"
 
 void init()
 {
@@ -33,6 +35,10 @@ void init()
 		ghc::filesystem::create_directory(Mod::get()->getSaveDir() / "renders");
 	if (!ghc::filesystem::exists(Mod::get()->getSaveDir() / "clickpacks"))
 		ghc::filesystem::create_directory(Mod::get()->getSaveDir() / "clickpacks");
+	if (!ghc::filesystem::exists(Mod::get()->getSaveDir() / "styles"))
+		ghc::filesystem::create_directory(Mod::get()->getSaveDir() / "styles");
+	if (!ghc::filesystem::exists(Mod::get()->getSaveDir() / "fonts"))
+		ghc::filesystem::create_directory(Mod::get()->getSaveDir() / "fonts");
 
 	JsonPatches::init();
 	DiscordRPCManager::init();
@@ -57,7 +63,7 @@ void initGUI()
 	
 	GUI::Window generalWindow("General", [] {
 		float framerate = Settings::get<float>("general/fps/value", 60.f);
-		if (GUI::inputFloat("##FPSValue", &framerate))
+		if (GUI::inputFloat("##FPSValue", &framerate, 1.f, 100000.f))
 			Mod::get()->setSavedValue<float>("general/fps/value", framerate);
 
 		if (GUI::shouldRender())
@@ -75,7 +81,7 @@ void initGUI()
 			ImGui::BeginDisabled();
 
 		float tps = Settings::get<float>("general/tps/value", 240.f);
-		if (GUI::inputFloat("##TPSValue", &tps, 1.f, 10000.f))
+		if (GUI::inputFloat("##TPSValue", &tps, 1.f, 100000.f))
 			Mod::get()->setSavedValue<float>("general/tps/value", tps);
 
 		if (GUI::shouldRender())
@@ -174,7 +180,7 @@ void initGUI()
 	GUI::addWindow(creatorWindow);
 
 	GUI::Window globalWindow("Global", [] {
-		if (GUI::checkbox("Discord Rich Presence", "general/discordrpc/enabled"))
+		if (GUI::checkbox("Discord RPC", "general/discordrpc/enabled"))
 			DiscordRPCManager::updateState();
 
 		GUI::arrowButton("Discord Rich Presence Settings");
@@ -209,15 +215,17 @@ void initGUI()
 					Mod::get()->setSavedValue<int>("level/startpos_switcher/right", key);
 			},
 			ImGuiWindowFlags_AlwaysAutoResize);
+
+		GUI::checkbox("Smart Startpos", "level/smart_startpos");
 		
 		GUI::checkbox("Show Hitboxes", "level/show_hitbox/enabled");
 		GUI::arrowButton("Show Hitboxes Settings");
 		GUI::modalPopup(
 			"Show Hitboxes Settings",
 			[] {
-				float borderSize = Settings::get<float>("level/show_hitbox/size", 1.0f);
+				float borderSize = Settings::get<float>("level/show_hitbox/size", 0.25f);
 				int borderAlpha = Settings::get<int>("level/show_hitbox/border_alpha", 255);
-				int fillAlpha = Settings::get<int>("level/show_hitbox/fill_alpha", 1);
+				int fillAlpha = Settings::get<int>("level/show_hitbox/fill_alpha", 50);
 
 				int maxQueue = Settings::get<int>("level/show_hitbox/max_queue", 240);
 
@@ -265,7 +273,7 @@ void initGUI()
 
 		if (GUI::checkbox("Safe Mode", "level/safe_mode/enabled"))
 			SafeMode::updateState();
-		GUI::checkbox("Safe Mode Endscreen Label", "level/safe_mode/endscreen_enabled", true);
+		GUI::checkbox("Safe Mode Endscreen", "level/safe_mode/endscreen_enabled", true);
 		GUI::tooltip("Shows a label on the endscreen when safe mode is active.");
 
 		GUI::checkbox("Endscreen Info", "level/endlevellayerinfo/enabled", true);
@@ -273,9 +281,6 @@ void initGUI()
 
 		GUI::checkbox("Hide Pause Button", "general/hide_pause/button");
 		GUI::checkbox("Hide Pause Menu", "general/hide_pause/menu");
-
-		GUI::checkbox("No Shaders", "level/no_shaders");
-		GUI::tooltip("Disables shaders from rendering.");
 
 		GUI::checkbox("Instant Complete", "level/instant_complete");
 		GUI::tooltip("Completes any level when you play it.\nUsing Instant Complete can and will ban you from the leaderboards! Use with caution.");
@@ -436,12 +441,26 @@ void initGUI()
 		if (GUI::hotkey("Toggle Menu", &togglekey))
 			Mod::get()->setSavedValue<int>("menu/togglekey", togglekey);
 
+		if(GUI::styleCombo.draw())
+		{
+			GUI::loadStyle(GUI::styleCombo.getSelectedFilePath());
+			GUI::setFont(GUI::fontCombo.getSelectedFilePath());
+		}
+
+		if(GUI::fontCombo.draw())
+			GUI::setFont(GUI::fontCombo.getSelectedFilePath());
+
+		if(GUI::shouldRender())
+			ImGui::InputText("Search", &GUI::searchBar);
+
 		if (GUI::button("Open Resources Folder"))
 			ShellExecute(0, NULL, string::wideToUtf8(Mod::get()->getResourcesDir().wstring()).c_str(), NULL, NULL, SW_SHOW);
 		if (GUI::button("Open Save Folder"))
 			ShellExecute(0, NULL, string::wideToUtf8(Mod::get()->getSaveDir().wstring()).c_str(), NULL, NULL, SW_SHOW);
 		if (GUI::button("Reset Windows"))
 			GUI::resetDefault();
+		if(GUI::button("Show Style Editor"))
+			GUI::windowReferences["Style Editor"]->enabled = true;
 	});
 	menuSettings.position = {1050, 250};
 	menuSettings.size.y = 300;
@@ -450,8 +469,18 @@ void initGUI()
 	GUI::Window playerWindow("Player", [] { 
 		JsonPatches::drawFromPatches(JsonPatches::player);
 		
-		GUI::checkbox("Custom Wave Trail", "player/trail/enabled");
+		GUI::checkbox("Show Trajectory", "player/show_trajectory/enabled");
 
+		GUI::arrowButton("Show Trajectory Settings");
+		GUI::modalPopup(
+			"Show Trajectory Settings",
+			[]{
+				GUI::checkbox("Performance Mode", "player/show_trajectory/performance_mode");
+				GUI::tooltip("Increases performance at the cost of accuracy");
+			}, ImGuiWindowFlags_AlwaysAutoResize);
+
+
+		GUI::checkbox("Custom Wave Trail", "player/trail/enabled");
 		GUI::arrowButton("Wave Customization");
 		GUI::modalPopup(
 			"Wave Customization",
@@ -487,20 +516,29 @@ void initGUI()
 	macrobot.size.y = 260;
 	GUI::addWindow(macrobot);
 
-	GUI::Window shortcuts("Shortcuts", GUI::Shortcut::renderWindow);
+	GUI::Window shortcuts("Shortcuts", GUI::Shortcut::drawWindow);
 	shortcuts.position = {1550, 50};
 	shortcuts.size.y = 400;
 	GUI::addWindow(shortcuts);
 
-	GUI::Window labels("Labels", Labels::renderWindow);
+	GUI::Window labels("Labels", Labels::drawWindow);
 	labels.position = {1300, 300};
 	labels.size.y = 180;
 	GUI::addWindow(labels);
 
-	GUI::Window recorder("Recorder", Record::renderWindow);
+	GUI::Window recorder("Recorder", Record::drawWindow);
 	recorder.position = {800, 280};
 	recorder.size.y = 450;
 	GUI::addWindow(recorder);
+
+	GUI::Window styleEditor("Style Editor", []{
+		GUI::drawStyleEditor();
+	});
+	styleEditor.addFlag(ImGuiWindowFlags_MenuBar);
+	styleEditor.minSize = {500, 500};
+	styleEditor.maxSize = {1000, 1000};
+	styleEditor.enabled = false;
+	GUI::addWindow(styleEditor);
 }
 
 void render()

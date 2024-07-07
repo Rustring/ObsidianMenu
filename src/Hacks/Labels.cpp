@@ -4,6 +4,7 @@
 #include "../JsonPatches/JsonPatches.h"
 #include "../Settings.hpp"
 #include "Hacks/SafeMode.h"
+#include "Hacks/ShowTrajectory.h"
 #include "Macrobot/Macrobot.h"
 
 #include <Geode/modify/PlayLayer.hpp>
@@ -63,7 +64,7 @@ class $modify(PlayLayer)
 		setupLabel(
 			"Framerate",
 			[&](cocos2d::CCLabelBMFont* pointer) {
-			pointer->setString(std::to_string((int)ImGui::GetIO().Framerate).c_str());
+			pointer->setString(std::to_string((int)std::roundf(ImGui::GetIO().Framerate)).c_str());
 			},
 			this
 		);
@@ -338,6 +339,9 @@ class $modify(PlayerObject)
 {
 	void pushButton(PlayerButton btn)
 	{
+		if(ShowTrajectory::isSimulation)
+			return PlayerObject::pushButton(btn);
+
 		if (!clickRegistered)
 		{
 			clicks.push_back(GetTickCount());
@@ -352,7 +356,9 @@ class $modify(PlayerObject)
 
 	void releaseButton(PlayerButton btn)
 	{
-		click = false;
+		if(!ShowTrajectory::isSimulation)
+			click = false;
+		
 		PlayerObject::releaseButton(btn);
 	}
 };
@@ -478,7 +484,7 @@ void Labels::settingsForLabel(const std::string& labelSettingName, std::function
 	});
 }
 
-void Labels::renderWindow()
+void Labels::drawWindow()
 {
 	GUI::checkbox("Hide All", "labels/hideAll");
 	settingsForLabel("Cheat Indicator", [] {});

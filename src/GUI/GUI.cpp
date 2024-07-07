@@ -128,10 +128,30 @@ void GUI::init()
 	hasLateInit = false;
 	uiSizeFactor = CCDirector::sharedDirector()->getOpenGLView()->getFrameSize().width / 1920.0f;
 	Blur::compiled = false;
-	auto fnt = ImGui::GetIO().Fonts->AddFontFromFileTTF(string::wideToUtf8((Mod::get()->getResourcesDir() / "arial.ttf").wstring()).c_str(), 14.f * uiSizeFactor);
-	ImGui::GetIO().FontDefault = fnt;
+	
 	windowPositions = json::object();
-	GUI::loadStyle(Mod::get()->getResourcesDir() / "Style.style");
+
+	ghc::filesystem::path defaultStylePath = Mod::get()->getSaveDir() / "styles" / "default.style";
+	ghc::filesystem::copy(Mod::get()->getResourcesDir() / "Style.style", defaultStylePath, ghc::filesystem::copy_options::overwrite_existing);
+
+	ghc::filesystem::path defaultFontPath = Mod::get()->getSaveDir() / "fonts" / "Roboto-Regular.ttf";
+	ghc::filesystem::copy(Mod::get()->getResourcesDir() / "Roboto-Regular.ttf", defaultFontPath, ghc::filesystem::copy_options::overwrite_existing);
+
+	styleCombo = DirectoryCombo("Style", Mod::get()->getSaveDir() / "styles", "menu/style_path");
+	fontCombo = DirectoryCombo("Font", Mod::get()->getSaveDir() / "fonts", "menu/font_path");
+
+	std::string fontPath = Settings::get<std::string>("menu/font_path", string::wideToUtf8(defaultFontPath.wstring()));
+	
+	if(fontPath.empty() || !ghc::filesystem::exists(fontPath))
+		fontPath = string::wideToUtf8(defaultFontPath.wstring());
+
+	std::string stylePath = Settings::get<std::string>("menu/style_path", string::wideToUtf8(defaultStylePath.wstring()));
+	if(stylePath.empty() || !ghc::filesystem::exists(stylePath))
+		stylePath = string::wideToUtf8(defaultStylePath.wstring());
+	
+	GUI::loadStyle(stylePath);
+	setFont(fontPath);
+
 	shortcuts.clear();
 	shadowTexture = cocos2d::CCTextureCache::get()->addImage(string::wideToUtf8((Mod::get()->getResourcesDir() / "shadow.png").wstring()).c_str(), true);
 	load();
@@ -158,7 +178,10 @@ void GUI::draw()
 		ac->step(ImGui::GetIO().DeltaTime);
 
 	for (Window& w : windows)
-		w.draw();
+	{
+		if(w.enabled)
+			w.draw();
+	}
 
 	float transitionDuration = Settings::get<float>("menu/transition_duration", 0.35f);
 
@@ -178,6 +201,8 @@ void GUI::toggle()
 
 	isVisible = true;
 	toggled = !toggled;
+																											//isPaused
+	cocos2d::CCEGLView::sharedOpenGLView()->showCursor(toggled || !PlayLayer::get() || (PlayLayer::get() && MBO(bool, PlayLayer::get(), 0x2F17)) || (PlayLayer::get() && PlayLayer::get()->getChildByID("EndLevelLayer")));
 
 	// 🔥🔥🔥🔥
 	hideTimer = toggled ? -FLT_MAX : 0;
@@ -190,11 +215,11 @@ void GUI::toggle()
 
 	windowActions.clear();
 
-	int direction = std::rand() % 4 + 1;
+	int direction = std::rand() % 8 + 1;
 
 	for (Window& w : windows)
 	{
-		uint8_t animationType = (w.name.length() + direction) % 4;
+		uint8_t animationType = (w.name.length() + direction) % 8;
 
 		ImVec2 dir;
 
@@ -211,6 +236,18 @@ void GUI::toggle()
 			break;
 		case 3:
 			dir = {-1400, -1400};
+			break;
+		case 4:
+			dir = {-2400, 0};
+			break;
+		case 5:
+			dir = {2400, 0};
+			break;
+		case 6:
+			dir = {0, -2400};
+			break;
+		case 7:
+			dir = {0, 2400};
 			break;
 		}
 
@@ -251,6 +288,7 @@ void GUI::addWindow(Window window)
 	}
 
 	windows.push_back(window);
+	windowReferences[window.name] = &windows.back();
 }
 
 void GUI::save()
@@ -282,8 +320,6 @@ void GUI::save()
 	f.close();
 
 	Mod::get()->saveData();
-
-	saveStyle(Mod::get()->getResourcesDir() / "Style.style");
 }
 
 void GUI::load()
@@ -373,16 +409,38 @@ void GUI::saveStyle(const ghc::filesystem::path& name)
 {
 	std::ofstream styleFile(name, std::ios::binary);
 	if (styleFile)
+	{
 		styleFile.write((const char*)&loadedStyle, sizeof(ImGuiStyle));
+		styleFile.write((const char*)&fontScale, sizeof(float));
+	}
 	styleFile.close();
 }
+
 void GUI::loadStyle(const ghc::filesystem::path& name)
 {
 	std::ifstream styleFile(name, std::ios::binary);
 	if (styleFile)
+	{
+		styleFile.seekg(0, std::ios::end);
+		int size = styleFile.tellg();
+		styleFile.seekg(0, std::ios::beg);
+
 		styleFile.read((char*)&loadedStyle, sizeof(ImGuiStyle));
+
+		if(size > sizeof(ImGuiStyle))
+			styleFile.read((char*)&fontScale, sizeof(float));
+		else
+			fontScale = 16.f;
+	}
 	
 	styleFile.close();
+}
+
+void GUI::setFont(const ghc::filesystem::path& font)
+{
+	ImFont* fnt = ImGui::GetIO().Fonts->AddFontFromFileTTF(string::wideToUtf8(font.wstring()).c_str(), fontScale * uiSizeFactor);
+	ImGui::GetIO().FontDefault = fnt;
+	ImGuiCocos::get().reloadFontTexture();
 }
 
 void GUI::setStyle()
@@ -394,8 +452,8 @@ void GUI::setStyle()
 	if (Settings::get<bool>("menu/window/rainbow/enabled"))
 	{
 		ImGui::ColorConvertHSVtoRGB(
-			ImGui::GetTime() * Settings::get<float>("menu/window/rainbow/speed", .2f),
-			Settings::get<float>("menu/window/rainbow/brightness", .6f),
+			ImGui::GetTime() * Settings::get<float>("menu/window/rainbow/speed", .4f),
+			Settings::get<float>("menu/window/rainbow/brightness", .8f),
 			Settings::get<float>("menu/window/rainbow/brightness"),
 			r, g, b
 		);

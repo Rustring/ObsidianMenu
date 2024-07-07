@@ -2,7 +2,6 @@
 #include "Settings.hpp"
 
 #include <Geode/modify/HardStreak.hpp>
-#include <Geode/modify/ShaderLayer.hpp>
 #include <Geode/modify/PlayLayer.hpp>
 
 using namespace geode::prelude;
@@ -59,16 +58,5 @@ class $modify(PlayLayer)
 
 			m_fields->AnticheatPatch->disable();
 		}
-	}
-};
-
-class $modify(ShaderLayer)
-{
-	void visit()
-	{
-		if (Settings::get<bool>("level/no_shaders", false))
-			return CCNode::visit();
-
-		ShaderLayer::visit();
 	}
 };

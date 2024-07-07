@@ -28,10 +28,17 @@ void JsonPatches::init()
 
 				const std::uintptr_t base = isCocos ? base::getCocos() : base::get();
 
-				auto gpatch = Mod::get()->patch(reinterpret_cast<void*>(base + address), util::hexToBytes(patch["on"])).unwrap();
-				gpatch->disable();
+				auto gpatch = Mod::get()->patch(reinterpret_cast<void*>(base + address), util::hexToBytes(patch["on"]));
+				
+				if(gpatch.has_value())
+				{
+					auto gpatchptr = gpatch.unwrap();
+					gpatchptr->disable();
 
-				jpatch.patches.push_back(gpatch);
+					jpatch.patches.push_back(gpatchptr);
+				}
+				else
+					log::error("Error patching: {}", gpatch.err());
 			}
 
 			patchGroup[jsonPatch["name"]] = jpatch;

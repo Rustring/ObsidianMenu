@@ -30,7 +30,7 @@
         },
         {
             "description": "Disable the player's level ending animation.",
-            "name": "No Player Ending Animation",
+            "name": "No Ending Animation",
             "opcodes": [
                 {
                     "address": "0x2DECEC",
@@ -311,6 +311,27 @@
                 {
                     "address": "0x30E864",
                     "on": "C7 04 24 00 00 FF FF"
+                }
+            ]
+        },
+        {
+            "name": "No Short Numbers",
+            "description": "All numbers are displayed in full.\n(For example, \"1.5M\" becomes \"1500000\".)",
+            "opcodes": [
+                {
+                    "address": "0x454FE",
+                    "on": "90 90"
+                }
+            ]
+        },
+        {
+            "name": "Free Window Resize",
+            "description": "Allows you to resize the window freely.",
+            "opcodes": [
+                {
+                    "address": "0x118A2B",
+                    "lib": "libcocos2d.dll",
+                    "on": "90 90 90 90 90"
                 }
             ]
         }

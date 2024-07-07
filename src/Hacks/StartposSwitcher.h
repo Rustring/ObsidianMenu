@@ -11,5 +11,6 @@ namespace StartposSwitcher
 	inline cocos2d::CCLabelBMFont* startPosLabel = nullptr;
 
 	void change(bool right);
+	void loadStartPos();
 	void showLabel();
 }

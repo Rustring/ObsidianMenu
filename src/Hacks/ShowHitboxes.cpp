@@ -10,7 +10,7 @@ using namespace ShowHitboxes;
 
 CCDrawNode* ShowHitboxes::getDrawNode()
 {
-	return MBO(CCDrawNode*, GameManager::get()->getGameLayer(), 11632);
+	return GameManager::get()->getGameLayer()->m_debugDrawNode;
 }
 
 CCRect ShowHitboxes::getObjectRect(cocos2d::CCRect r, float a, float b)
@@ -45,8 +45,8 @@ void ShowHitboxes::drawForPlayer(CCDrawNode* node, PlayerObject* player)
 
 	CCRect* rect1 = reinterpret_cast<CCRect*(__thiscall*)(GameObject*)>(base::get() + 0x13a570)(player);
 	CCRect rect2 = player->m_vehicleSize >= 1.f ? getObjectRect(*rect1, 0.25f, 0.25f) : getObjectRect(*rect1, 0.4f, 0.4f);
-	drawRectangleHitbox(node, *rect1, ccColor4B(255, 0, 0, 255));
-	drawRectangleHitbox(node, rect2, ccColor4B(0, 255, 0, 255));
+	drawRectangleHitbox(node, *rect1, ccColor4B(255, 0, 0, 5));
+	drawRectangleHitbox(node, rect2, ccColor4B(0, 255, 0, 5));
 }
 
 void ShowHitboxes::forceDraw(GJBaseGameLayer* self, bool editor)
@@ -153,18 +153,20 @@ class $modify(CCDrawNode)
 {
 	bool drawPolygon(CCPoint *verts, unsigned int count, const ccColor4F &colFill, float borderWidth, const ccColor4F& colBase)
 	{
-		ccColor4F colBaseNew = colBase;
-		ccColor4F colFillNew = colFill;
-
 		if (ShowHitboxes::debugDrawing)
 		{
+			ccColor4F colBaseNew = colBase;
+			ccColor4F colFillNew = colFill;
+
 			colFillNew = colBaseNew;
 			borderWidth = Settings::get<float>("level/show_hitbox/size", 0.25f);
 			colBaseNew.a = Settings::get<int>("level/show_hitbox/border_alpha", 255) / 255.f;
 			colFillNew.a = Settings::get<int>("level/show_hitbox/fill_alpha", 50) / 255.f;
+
+			return CCDrawNode::drawPolygon(verts, count, colFillNew, borderWidth, colBaseNew);
 		}
-		
-		return CCDrawNode::drawPolygon(verts, count, colFillNew, borderWidth, colBaseNew);
+
+		return CCDrawNode::drawPolygon(verts, count, colFill, borderWidth, colBase);
 	}
 };
 

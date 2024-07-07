@@ -24,7 +24,7 @@ void glViewportHook(GLint a, GLint b, GLsizei c, GLsizei d)
 {
 	if (visiting && recorder.m_recording && inShader)
 	{
-		if (c != 2608 && d != 2608)
+		if (c != 2608 && d != 2608 && c != 1304 && d != 1304 && c != 652 && d != 652)
 		{
 			c = Settings::get<int>("recorder/resolution/x", 1920);
 			d = Settings::get<int>("recorder/resolution/y", 1080);
@@ -319,7 +319,7 @@ void Recorder::capture_frame()
 
 void Recorder::stop_audio()
 {
-	Common::showWithPriority(FLAlertLayer::create("Info", "Macro and sound rendererd successfully!", "Ok"));
+	Common::showWithPriority(FLAlertLayer::create("Info", "Macro and sound rendered successfully!", "Ok"));
 	AudioRecord::stop();
 	m_recording_audio = false;
 
@@ -418,11 +418,11 @@ void Recorder::handle_recording(GJBaseGameLayer *play_layer, float dt)
 		if(Settings::get<bool>("recorder/record_audio", false))
 			start_audio();
 		else
-			Common::showWithPriority(FLAlertLayer::create("Info", "Macro rendererd successfully!", "Ok"));
+			Common::showWithPriority(FLAlertLayer::create("Info", "Macro rendered successfully!", "Ok"));
 	}
 }
 
-void Record::renderWindow()
+void Record::drawWindow()
 {
 	if(recorder.m_recording || recorder.m_recording_audio)
 	{

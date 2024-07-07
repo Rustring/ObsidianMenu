@@ -72,5 +72,5 @@ namespace Record
 	inline bool inShader = false;
 	inline std::string renderPath = "";
 
-	void renderWindow();
+	void drawWindow();
 }

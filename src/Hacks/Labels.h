@@ -54,5 +54,5 @@ void calculatePositions();
 void GJBaseGameLayerProcessCommands(GJBaseGameLayer* self);
 
 void settingsForLabel(const std::string& labelSettingName, std::function<void()>extraSettings);
-void renderWindow();
+void drawWindow();
 } // namespace Labels

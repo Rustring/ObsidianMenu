@@ -1,6 +1,7 @@
 #include "../Common.h"
 #include "../ConstData.h"
 #include "../GUI/GUI.h"
+#include "../Hacks/ShowTrajectory.h"
 
 #include "../util.hpp"
 #include "AudioRecord.h"
@@ -13,6 +14,7 @@
 #include "Macrobot.h"
 #include "Clickpacks.h"
 #include "../Hacks/PhysicsBypass.h"
+#include "Macrobot/MacroEditor.h"
 
 #include <Geode/Geode.hpp>
 #include <Geode/modify/GJBaseGameLayer.hpp>
@@ -73,9 +75,16 @@ class $modify(PlayLayer)
 		if (checkpoints.contains(checkpoint) && playerMode != DISABLED && PlayLayer::get())
 		{
 			CheckpointData checkpointData = checkpoints[checkpoint];
-			const auto check = [&](const Action &action) -> bool { return action.frame > checkpointData.frame; };
-			macro.inputs.erase(std::remove_if (macro.inputs.begin(), macro.inputs.end(), check), macro.inputs.end());
+
+			if(playerMode == RECORDING)
+			{
+				const auto check = [&](const Action &action) -> bool { return action.frame > checkpointData.frame; };
+				macro.inputs.erase(std::remove_if (macro.inputs.begin(), macro.inputs.end(), check), macro.inputs.end());
+			}
+			
 			PlayLayer::loadFromCheckpoint(checkpoint);
+
+			*(int*)((char*)base::get() + 0x4F24A8) = checkpointData.randomSeed;
 
 			checkpointData.p1.apply(this->m_player1, true);
 			if (MBO(bool, this, 878))
@@ -108,12 +117,19 @@ class $modify(PlayLayer)
 			macro.levelInfo.id = level->m_levelID.value();
 			macro.levelInfo.name = level->m_levelName;
 
-			if (resetFromStart && playerMode == RECORDING)
+			if (resetFromStart)
 			{
-				checkpoints.clear();
-				macro.inputs.clear();
+				if(playerMode == RECORDING)
+				{
+					checkpoints.clear();
+					macro.inputs.clear();
 
-				macro.framerate = Common::getTPS();
+					macro.framerate = Common::getTPS();
+
+					macro.seed = *(int*)((char*)base::get() + 0x4F24A8);
+				}
+				else
+					*(int*)((char*)base::get() + 0x4F24A8) = macro.seed;
 			}
 
 			resetFrame = false;
@@ -148,6 +164,9 @@ class $modify(PlayerObject)
 	void pushButton(PlayerButton btn)
 	{
 		PlayerObject::pushButton(btn);
+
+		if(ShowTrajectory::isSimulation)
+			return;
 		
 		auto pl = PlayLayer::get();
 
@@ -163,6 +182,9 @@ class $modify(PlayerObject)
 	void releaseButton(PlayerButton btn)
 	{
 		PlayerObject::releaseButton(btn);
+
+		if(ShowTrajectory::isSimulation)
+			return;
 
 		auto pl = PlayLayer::get();
 
@@ -204,24 +226,26 @@ class $modify(GJBaseGameLayer)
 {
 	void update(float dt)
 	{
-		if (Settings::get<bool>("macrobot/frame_step/enabled", false))
+		if (!Settings::get<bool>("macrobot/frame_step/enabled", false) || !PlayLayer::get())
 		{
-			if(Settings::get<bool>("macrobot/frame_step/hold", false) && holdingAdvance)
-				advanceHoldTime += dt;
-			else
-				advanceHoldTime = 0;
-			
-			if (PlayLayer::get()->m_gameState.m_unk1f8 < targetSteps)
-				GJBaseGameLayer::update(dt);
-
-			if(advanceHoldTime > 0.5f)
-					targetSteps = PlayLayer::get()->m_gameState.m_unk1f8 + 1;
-
+			GJBaseGameLayer::update(dt);
 			return;
 		}
 
-		GJBaseGameLayer::update(dt);
+		float speedhack = Settings::get<bool>("general/speedhack/enabled") ? Settings::get<float>("general/speedhack/value") : 1.f;
+
+		if (Settings::get<bool>("macrobot/frame_step/hold", false) && holdingAdvance)
+			advanceHoldTime += dt / speedhack;
+		else
+			advanceHoldTime = 0.0f;
+
+		if (PlayLayer::get()->m_gameState.m_unk1f8 < targetSteps)
+			GJBaseGameLayer::update(dt);
+
+		if (advanceHoldTime > 0.5)
+			targetSteps = PlayLayer::get()->m_gameState.m_unk1f8 + 1;
 	}
+
 
 	void handleButton(bool down, int button, bool player1)
 	{
@@ -242,6 +266,7 @@ class $modify(CheckpointObject)
 		{
 			CheckpointData data;
 			data.frame = PlayLayer::get()->m_gameState.m_unk1f8;
+			data.randomSeed = *(int*)((char*)base::get() + 0x4F24A8);
 			data.p1.fromPlayer(PlayLayer::get()->m_player1, true);
 			data.p2.fromPlayer(PlayLayer::get()->m_player2, true);
 
@@ -294,14 +319,16 @@ void Macrobot::handleAction(Action& action)
 	FMOD::Sound* soundToPlay = nullptr;
 	FMOD::System* system = FMODAudioEngine::sharedEngine()->m_system;
 
+	Clickpack& clickpack = player1 ? Clickpacks::currentClickpack : Clickpacks::currentClickpackP2;
+
 	switch(button)
 	{
 		case 1:
-			soundToPlay = down ? (timeDifference <= softclickTime ? Clickpacks::currentClickpack.randomSoftClick() : Clickpacks::currentClickpack.randomClick()) : Clickpacks::currentClickpack.randomRelease();
+			soundToPlay = down ? (timeDifference <= softclickTime ? clickpack.randomSoftClick() : clickpack.randomClick()) : clickpack.randomRelease();
 			break;
 		case 2:
 		case 3:
-			soundToPlay = down ? Clickpacks::currentClickpack.randomPlatClick() : Clickpacks::currentClickpack.randomPlatRelease();
+			soundToPlay = down ? clickpack.randomPlatClick() : clickpack.randomPlatRelease();
 	}
 
 	timeForKey[button] = timestamp;
@@ -339,19 +366,17 @@ void Macrobot::MPlayerCheckpoint::fromPlayer(PlayerObject *player, bool fullCapt
 	if (!player)
 		return;
 
-	cocos2d::CCPoint position = player->m_position;
 	this->yVel = player->m_yVelocity;
 	this->rotation = player->getRotation();
 	this->xVel = player->m_platformerXVelocity;
-	this->xPos = position.x;
-	this->yPos = position.y;
-	this->nodeXPos = player->getPositionX();
-	this->nodeYPos = player->getPositionY();
+	this->xPos = player->m_position.x;
+	this->yPos = player->m_position.y;
 	this->rotationRate = player->m_rotationSpeed;
 	this->lastSnappedTo = player->m_objectSnappedTo;
 	this->lastSnappedTo2 = MBO(GameObject*, player, 1724);
 	this->isOnSlope = player->m_isOnSlope;
 	this->wasOnSlope = player->m_wasOnSlope;
+	this->isOnGround = player->m_isOnGround;
 
 	if (fullCapture)
 	{
@@ -401,8 +426,8 @@ void Macrobot::MPlayerCheckpoint::apply(PlayerObject* player, bool fullRestore)
 	player->m_yVelocity = this->yVel;
 	player->setRotation(this->rotation);
 
-	player->setPositionX(this->nodeXPos);
-	player->setPositionY(this->nodeYPos);
+	player->setPositionX(this->xPos);
+	player->setPositionY(this->yPos);
 
 	player->m_position = cocos2d::CCPoint(this->xPos, this->yPos);
 
@@ -412,6 +437,7 @@ void Macrobot::MPlayerCheckpoint::apply(PlayerObject* player, bool fullRestore)
 
 	player->m_isOnSlope = this->isOnSlope;
 	player->m_wasOnSlope = this->wasOnSlope;
+	player->m_isOnGround = this->isOnGround;
 
 	//TODO: spamming checkpoints on slopes changes slope start time
 
@@ -605,6 +631,20 @@ void Macrobot::drawMacroTable()
 		getMacros();
 }
 
+bool Macrobot::clickBetweenFramesCheck()
+{
+	bool res = Loader::get()->getLoadedMod("syzzi.click_between_frames") && Loader::get()->getLoadedMod("syzzi.click_between_frames")->isEnabled();
+
+	if(res)
+	{
+		Common::showWithPriority(FLAlertLayer::create("Warning", "Disable the click between frames mod before using macrobot!", "Ok" ));
+		Macrobot::playerMode = DISABLED;
+		GUI::toggle();
+	}
+
+	return res;
+}
+
 void Macrobot::drawWindow()
 {
 	if (GUI::shouldRender())
@@ -614,14 +654,14 @@ void Macrobot::drawWindow()
 			Common::calculateFramerate();
 			PhysicsBypass::calculateTickrate();
 		}
-		if (ImGui::RadioButton("Record", (int*)&Macrobot::playerMode, (int)RECORDING))
+		if (ImGui::RadioButton("Record", (int*)&Macrobot::playerMode, (int)RECORDING) && !clickBetweenFramesCheck())
 		{
 			Common::calculateFramerate();
 			PhysicsBypass::calculateTickrate();
 			if (PlayLayer::get())
-				PlayLayer::get()->resetLevelFromStart();
+				PlayLayer::get()->resetLevel();
 		}
-		if (ImGui::RadioButton("Play", (int*)&Macrobot::playerMode, (int)PLAYBACK))
+		if (ImGui::RadioButton("Play", (int*)&Macrobot::playerMode, (int)PLAYBACK) && !clickBetweenFramesCheck())
 		{
 			Common::calculateFramerate();
 			PhysicsBypass::calculateTickrate();
@@ -645,6 +685,21 @@ void Macrobot::drawWindow()
 			else
 				ImGui::Text("There are no macros to load! Create some macros first.");
 		});
+
+		if (GUI::button("Editor"))
+		{
+			if(macro.inputs.size() <= 0)
+			{
+				Common::showWithPriority(FLAlertLayer::create("Error", "No macro loaded!", "Ok"));
+				GUI::toggle();
+			}
+			else
+				ImGui::OpenPopup("Macro Editor");
+		}
+
+		GUI::modalPopup("Macro Editor", []{
+				MacroEditor::renderWindow();
+		}, 0);
 
 		int corrections = Settings::get<int>("macrobot/corrections");
 

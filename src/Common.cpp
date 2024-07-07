@@ -39,7 +39,7 @@ void Common::calculateFramerate()
 	else
 		framerate = GameManager::get()->m_customFPSTarget;// MBO(float, gameManager, 900);
 
-	if (framerate < 60.f)
+	if (framerate < 60.f || framerate > 100000.f)
 		framerate = 60.f;
 
 	cocos2d::CCDirector::sharedDirector()->setAnimationInterval(1.f / framerate);
@@ -163,7 +163,7 @@ void Common::updateCheating()
 	{
 		for(const auto& pair : group)
 		{
-			if (cheatOpcodes.contains(pair.second.patches[0]->getAddress() - base::get()) && pair.second.patches[0]->isEnabled())
+			if (pair.second.patches.size() > 0 && cheatOpcodes.contains(pair.second.patches[0]->getAddress() - base::get()) && pair.second.patches[0]->isEnabled())
 			{
 				isCheating = true;
 				return true;
@@ -192,8 +192,10 @@ void Common::updateCheating()
 	bool instantComplete = Settings::get<bool>("level/instant_complete", false);
 	bool hitboxMultiplier = Settings::get<bool>("level/hitbox_multiplier", false);
 	bool layoutMode = Settings::get<bool>("level/layout_mode", false);
+	bool showTrajectory = Settings::get<bool>("player/show_trajectory/enabled", false);
+	bool frameStepper = Settings::get<bool>("macrobot/frame_step/enabled", false);
 
-	if (speedhack != 1.f || Macrobot::playerMode == 0 || (showHitbox && !onDeath) || hidePause || hitboxMultiplier || noShaders || instantComplete || layoutMode)
+	if (speedhack != 1.f || Macrobot::playerMode == 0 || (showHitbox && !onDeath) || hidePause || hitboxMultiplier || noShaders || instantComplete || layoutMode || showTrajectory || frameStepper)
 	{
 		isCheating = true;
 		return;

@@ -97,28 +97,85 @@
             ]
         },
         {
-            "description": "Disables the particles from the ship and the ufo.",
-            "name": "No Vehicle Particles",
+            "name": "Checkpoint Limit Bypass",
+            "description": "Allows you to place more checkpoints than the limit.",
             "opcodes": [
                 {
-                    "address": "0x2D4810",
-                    "on": "90 90"
+                    "address": "0x2E84D9",
+                    "on": "EB"
+                }
+            ]
+        },
+        {
+            "name": "All Modes Platformer",
+            "description": "Allows for all modes to be played in platformer mode.",
+            "opcodes": [
+                {
+                    "address": "0x19C817",
+                    "on": "90 90 90 90 90 90"
                 },
                 {
-                    "address": "0x2C2DF1",
-                    "on": "90 90"
+                    "address": "0x19C878",
+                    "on": "90 90 90 90 90 90"
+                }
+            ]
+        },
+        {
+            "name": "Force Platformer",
+            "description": "Forces the level to be played in platformer mode.",
+            "opcodes": [
+                {
+                    "address": "0x1BD7B9",
+                    "on": "B2 01 90 90 90 90"
                 },
                 {
-                    "address": "0x49E5A0",
-                    "on": "00 00 80 3F 00 00 00 00 00 00 00 00 00 00 00 00"
+                    "address": "0x1BD7EA",
+                    "on": "EB"
+                }
+            ]
+        },
+        {
+            "name": "No Particles",
+            "description": "Disables all particles in the game.",
+            "opcodes": [
+                {
+                    "address": "0xBD52A",
+                    "lib": "libcocos2d.dll",
+                    "on": "E9 25 01 00 00 90"
+                }
+            ]
+        },
+        {
+            "name": "No Portal Lightning",
+            "description": "Disables portal lightning from size-changing portals.",
+            "opcodes": [
+                {
+                    "address": "0x2D9535",
+                    "on": "EB 2C 90"
+                }
+            ]
+        },
+        {
+            "name": "No Hide Trigger",
+            "description": "Disables hide player triggers.",
+            "opcodes": [
+                {
+                    "address": "0x39D417",
+                    "on": "01"
+                }
+            ]
+        },
+        {
+            "name": "No Ghost Trail",
+            "description": "Disables player ghost trail triggers.",
+            "opcodes": [
+                {
+                    "address": "0x2EAB14",
+                    "on": "6A 00 90"
                 },
                 {
-                    "address": "0x49E5D0",
-                    "on": "00 00 80 3F 00 00 00 00 00 00 00 00 00 00 00 00"
-                },
-                {
-                    "address": "0x49E600",
-                    "on": "00 00 80 3F BF BE 3E 3F 00 00 00 00 00 00 00 00"
+                    "address": "0x2EAB2D",
+                    "on": "6A 00 90"
                 }
             ]
         }

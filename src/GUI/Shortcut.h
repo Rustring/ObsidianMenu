@@ -19,6 +19,6 @@ namespace GUI
 		}
 
 		static bool handleShortcut(const std::string&);
-		static void renderWindow();
+		static void drawWindow();
 	};
 };

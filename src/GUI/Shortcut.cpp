@@ -62,7 +62,7 @@ bool GUI::Shortcut::handleShortcut(const std::string& name)
 	return false;
 }
 
-void GUI::Shortcut::renderWindow()
+void GUI::Shortcut::drawWindow()
 {
 	if (GUI::shouldRender())
 	{

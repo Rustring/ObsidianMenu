@@ -238,6 +238,7 @@ class $modify(EndLevelLayer)
 		);
 		noclipAccuracyLabelELL->limitLabelWidth(180.f, .8f, .5f);
 		noclipAccuracyLabelELL->setPosition({ textPosition.x + 80.f, textPosition.y + 15.f });
+		noclipAccuracyLabelELL->setID("noclip-accuracy-label"_spr);
 		layer->addChild(noclipAccuracyLabelELL);
 
 		auto noclipDeathsLabelELL = CCLabelBMFont::create(
@@ -246,6 +247,7 @@ class $modify(EndLevelLayer)
 		);
 		noclipDeathsLabelELL->limitLabelWidth(180.f, .8f, .5f);
 		noclipDeathsLabelELL->setPosition({ textPosition.x + 80.f, textPosition.y - 15.f });
+		noclipDeathsLabelELL->setID("noclip-deaths-label"_spr);
 		layer->addChild(noclipDeathsLabelELL);
 	}
 };

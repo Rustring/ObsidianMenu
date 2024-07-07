@@ -35,6 +35,10 @@
                 {
                     "address": "0x4D078",
                     "on": "EB 26"
+                },
+                {
+                    "address": "0xDF1E8",
+                    "on": "EB"
                 }
             ]
         },

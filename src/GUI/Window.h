@@ -14,12 +14,13 @@ namespace GUI
 		std::function<void()> windowFunction;
 
 	public:
+		bool enabled = true;
+
 		std::string name = "";
+
 		ImVec2 position = ImVec2(0, 0);
 		ImVec2 renderPosition = ImVec2(0, 0);
-
 		ImVec2 size = ImVec2(220, 120);
-
 		ImVec2 minSize = ImVec2(200, 120);
 		ImVec2 maxSize = ImVec2(200, 2000);
 

@@ -23,6 +23,7 @@ public:
 namespace Clickpacks
 {
 	inline Clickpack currentClickpack;
+	inline Clickpack currentClickpackP2;
 
 	void init();
 	void drawGUI();
